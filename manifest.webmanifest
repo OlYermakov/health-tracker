@@ -1,0 +1,14 @@
+{
+  "name": "12-тижневий health tracker",
+  "short_name": "Health tracker",
+  "description": "Особистий трекер звичок, ваги, тренувань і самопочуття.",
+  "lang": "uk",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#071018",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
