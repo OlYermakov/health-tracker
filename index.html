@@ -14,12 +14,6 @@
       <h1>Health Glass</h1>
       <div class="sub">Темний інтерактивний дашборд у стилі Liquid Glass. Відмічай звички, тренування, вагу та самопочуття — прогрес зберігається локально в браузері.</div>
     </div>
-    <div class="hero-actions">
-      <button class="btn primary" onclick="exportData()">Експорт даних</button>
-      <button class="btn" onclick="document.getElementById('importFile').click()">Імпорт</button>
-      <button class="btn" onclick="resetAll()">Скинути</button>
-      <input id="importFile" type="file" accept=".json" hidden onchange="importData(event)" />
-    </div>
   </section>
 
   <section class="cards">
@@ -122,8 +116,6 @@
 
   <div class="footer-note">Дані зберігаються лише у localStorage цього браузера. Це не медичний застосунок і не замінює консультацію лікаря.</div>
 </div>
-
-<div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
 </body>
