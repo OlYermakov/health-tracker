@@ -1,8 +1,8 @@
-const CACHE_NAME="health-tracker-v7";
+const CACHE_NAME="health-tracker-v8";
 const APP_SHELL=[
-  "./","./index.html","./style.css?v=6","./training.css","./notes.css",
-  "./exercise-details.css","./enhancements.css?v=7","./app.js","./notes.js",
-  "./exercise-details.js","./enhancements.js","./manifest.webmanifest","./icon.svg"
+  "./","./index.html","./style.css?v=8","./training.css?v=8","./notes.css?v=8",
+  "./exercise-details.css?v=8","./enhancements.css?v=8","./app.js?v=8",
+  "./exercise-details.js?v=8","./enhancements.js?v=8","./manifest.webmanifest","./icon.svg"
 ];
 
 self.addEventListener("install",event=>{
