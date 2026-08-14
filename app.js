@@ -1,14 +1,15 @@
 const days = [
-  {name:"Понеділок", workout:false, note:""},
-  {name:"Вівторок", workout:false, note:""},
-  {name:"Середа", workout:true, note:"Зал 30–40 хв, щадно для колін"},
-  {name:"Четвер", workout:false, note:""},
-  {name:"П’ятниця", workout:false, note:""},
-  {name:"Субота", workout:true, note:"Зал або басейн 30–40 хв"},
-  {name:"Неділя", workout:false, note:"За бажанням легка прогулянка"}
+  {name:"Понеділок", recommended:false, note:""},
+  {name:"Вівторок", recommended:false, note:""},
+  {name:"Середа", recommended:true, note:"Рекомендований день: зал 30–40 хв, щадно для колін"},
+  {name:"Четвер", recommended:false, note:""},
+  {name:"П’ятниця", recommended:false, note:""},
+  {name:"Субота", recommended:true, note:"Рекомендований день: зал або басейн 30–40 хв"},
+  {name:"Неділя", recommended:false, note:"За бажанням легка прогулянка"}
 ];
 
 const KEY = "healthGlassTracker_v1";
+const WEEKLY_WORKOUT_TARGET = 2;
 let currentWeek = 1;
 
 function blankWeek(){
@@ -16,17 +17,33 @@ function blankWeek(){
     startWeight:"",
     endWeight:"",
     mood:"",
-    days: days.map(d => ({
+    days: days.map(() => ({
       breakfast:false,
       vegetables:false,
       water:false,
-      workout:d.workout ? false : null
+      workout:false
     }))
   };
 }
 function defaultState(){
-  const weeks = Array.from({length:12}, blankWeek);
-  return {weeks};
+  return {weeks:Array.from({length:12}, blankWeek)};
+}
+function normalizeState(parsed){
+  if(!parsed || !Array.isArray(parsed.weeks) || parsed.weeks.length!==12) return defaultState();
+  parsed.weeks = parsed.weeks.map((week) => {
+    const normalized = blankWeek();
+    normalized.startWeight = week?.startWeight ?? "";
+    normalized.endWeight = week?.endWeight ?? "";
+    normalized.mood = week?.mood ?? "";
+    normalized.days = days.map((_, i) => ({
+      breakfast:Boolean(week?.days?.[i]?.breakfast),
+      vegetables:Boolean(week?.days?.[i]?.vegetables),
+      water:Boolean(week?.days?.[i]?.water),
+      workout:Boolean(week?.days?.[i]?.workout)
+    }));
+    return normalized;
+  });
+  return parsed;
 }
 let state = load();
 
@@ -34,22 +51,24 @@ function load(){
   try{
     const raw = localStorage.getItem(KEY);
     if(!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    if(!parsed.weeks || parsed.weeks.length!==12) return defaultState();
-    return parsed;
+    return normalizeState(JSON.parse(raw));
   }catch(e){ return defaultState(); }
 }
 function save(){
   localStorage.setItem(KEY, JSON.stringify(state));
   renderAll();
 }
+function workoutCount(w){
+  return w.days.filter(d=>d.workout).length;
+}
 function completionOf(w){
-  let done=0,total=0;
-  w.days.forEach((d,i)=>{
-    ["breakfast","vegetables","water"].forEach(k=>{total++; if(d[k])done++;});
-    if(days[i].workout){total++; if(d.workout)done++;}
+  let done=0;
+  w.days.forEach(d=>{
+    ["breakfast","vegetables","water"].forEach(k=>{ if(d[k]) done++; });
   });
-  return total ? done/total : 0;
+  done += Math.min(workoutCount(w), WEEKLY_WORKOUT_TARGET);
+  const total = 21 + WEEKLY_WORKOUT_TARGET;
+  return done/total;
 }
 function weightNumber(v){
   if(v===null || v===undefined || v==="") return null;
@@ -81,23 +100,22 @@ function renderRows(){
   const w=state.weeks[currentWeek-1];
   days.forEach((day,i)=>{
     const tr=document.createElement("tr");
-    if(day.workout) tr.classList.add("workout");
+    if(day.recommended) tr.classList.add("workout");
     tr.innerHTML=`
       <td>${day.name}</td>
       <td>${checkHTML(i,"breakfast",w.days[i].breakfast)}</td>
       <td>${checkHTML(i,"vegetables",w.days[i].vegetables)}</td>
       <td>${checkHTML(i,"water",w.days[i].water)}</td>
-      <td>${day.workout ? checkHTML(i,"workout",w.days[i].workout) : "—"}</td>
+      <td>${checkHTML(i,"workout",w.days[i].workout)}</td>
       <td>${day.note || ""}</td>`;
     tbody.appendChild(tr);
   });
 }
 function checkHTML(i,key,on){
-  return `<button class="check ${on?'on':''}" onclick="toggleCheck(${i},'${key}')">✓</button>`;
+  return `<button class="check ${on?'on':''}" onclick="toggleCheck(${i},'${key}')" aria-label="${on?'Виконано':'Не виконано'}">✓</button>`;
 }
 function toggleCheck(i,key){
   const d=state.weeks[currentWeek-1].days[i];
-  if(d[key]===null) return;
   d[key]=!d[key];
   save();
 }
@@ -137,6 +155,12 @@ function renderCards(){
   const dash=377*(1-pct);
   document.getElementById("ringArc").style.strokeDashoffset=dash;
   document.getElementById("ringPct").textContent=Math.round(pct*100)+"%";
+
+  const workoutStatus=document.getElementById("workoutStatus");
+  if(workoutStatus){
+    const count=workoutCount(w);
+    workoutStatus.textContent=`${count} / ${WEEKLY_WORKOUT_TARGET} тренування`;
+  }
 }
 function fitCanvas(c){
   const dpr=window.devicePixelRatio||1;
