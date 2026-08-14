@@ -43,12 +43,6 @@ function save(){
   localStorage.setItem(KEY, JSON.stringify(state));
   renderAll();
 }
-function toast(msg){
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"),1500);
-}
 function completionOf(w){
   let done=0,total=0;
   w.days.forEach((d,i)=>{
@@ -255,28 +249,6 @@ document.getElementById("startWeight").addEventListener("change",e=>{state.weeks
 document.getElementById("endWeight").addEventListener("change",e=>{state.weeks[currentWeek-1].endWeight=e.target.value;save()});
 document.getElementById("mood").addEventListener("change",e=>{state.weeks[currentWeek-1].mood=e.target.value;save()});
 
-function exportData(){
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="health-glass-data.json";a.click();
-  URL.revokeObjectURL(a.href);toast("Дані експортовано");
-}
-function importData(ev){
-  const file=ev.target.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const data=JSON.parse(reader.result);
-      if(!data.weeks || data.weeks.length!==12) throw new Error();
-      state=data;localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast("Дані імпортовано");
-    }catch(e){toast("Не вдалося імпортувати файл")}
-  };
-  reader.readAsText(file);
-  ev.target.value="";
-}
-function resetAll(){
-  if(!confirm("Скинути всі збережені дані?")) return;
-  state=defaultState();localStorage.setItem(KEY,JSON.stringify(state));currentWeek=1;renderAll();toast("Дані скинуто");
-}
 window.addEventListener("resize",()=>requestAnimationFrame(drawCharts));
 renderMood();
 renderAll();
