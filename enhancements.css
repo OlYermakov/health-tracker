@@ -1,7 +1,6 @@
 .hero-tools{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
 .program-settings{margin-top:18px;padding:16px 20px;display:flex;align-items:end;justify-content:space-between;gap:18px}
 .date-range{font-size:17px;font-weight:850;margin-top:7px;color:var(--text)}
-.card-caption{color:var(--muted);font-size:11px;font-weight:700;margin-top:5px}
 .mobile-table-hint{display:none;color:var(--muted);font-size:12px;margin:0 0 10px}
 .wellbeing-panel{margin-top:18px;padding:22px;display:grid;grid-template-columns:minmax(220px,.65fr) 1.35fr;gap:26px;align-items:end}
 .wellbeing-panel h2,.summary-section h2{margin:7px 0 7px;font-size:22px}
@@ -37,6 +36,7 @@
   .section-nav{top:calc(env(safe-area-inset-top,0px) + 8px);margin-top:10px;padding:5px;border-radius:16px}
   .section-nav a{min-width:0;padding:9px 4px;font-size:12px}
   #tracker,#training,#progress{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 72px)}
+  .week-jump-panel{display:none}
   .program-settings{width:100%;min-width:0;margin-top:12px;padding:15px;align-items:stretch;flex-direction:column;gap:12px;overflow:hidden}
   .program-settings>*,.program-settings .field{width:100%;min-width:0;max-width:100%;overflow:hidden}
   .program-settings input[type="date"]{
@@ -80,7 +80,7 @@
   .table-wrap td:nth-child(2)::before{content:"Білковий сніданок"}
   .table-wrap td:nth-child(3)::before{content:"Овочі"}
   .table-wrap td:nth-child(4)::before{content:"Вода"}
-  .table-wrap td:nth-child(5)::before{content:"Тренування"}
+  .table-wrap td:nth-child(5)::before{content:"Активність"}
   .table-wrap td:nth-child(6){grid-column:1/-1;padding:0;background:transparent;border:0}
   .table-wrap .check{width:44px;height:44px;border-radius:13px;font-size:20px}
   .table-wrap .note-cell,.table-wrap .day-note{width:100%;min-width:0;max-width:none}
