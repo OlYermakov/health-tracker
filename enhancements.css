@@ -1,0 +1,38 @@
+.hero-tools{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
+.program-settings{margin-top:18px;padding:16px 20px;display:flex;align-items:end;justify-content:space-between;gap:18px}
+.date-range{font-size:17px;font-weight:850;margin-top:7px;color:var(--text)}
+.card-caption{color:var(--muted);font-size:11px;font-weight:700;margin-top:5px}
+.mobile-table-hint{display:none;color:var(--muted);font-size:12px;margin:0 0 10px}
+.wellbeing-panel{margin-top:18px;padding:22px;display:grid;grid-template-columns:minmax(220px,.65fr) 1.35fr;gap:26px;align-items:end}
+.wellbeing-panel h2,.summary-section h2{margin:7px 0 7px;font-size:22px}
+.wellbeing-panel p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.wellbeing-grid{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:10px;align-items:end}
+.wellbeing-grid input,.wellbeing-grid select{width:100%;min-width:0}
+.pain-warning{grid-column:1/-1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,209,102,.3);background:rgba(255,209,102,.07);color:var(--amber);font-size:13px;line-height:1.45}
+.summary-section{margin-top:18px;padding:22px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.summary-card{padding:15px;border-radius:17px;border:1px solid var(--line);background:rgba(255,255,255,.035);display:grid;gap:7px}
+.summary-card span{color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
+.summary-card strong{font-size:21px}
+.exercise-log{display:grid;grid-template-columns:repeat(2,minmax(100px,150px));gap:9px;margin-top:12px}
+.exercise-log label{display:grid;gap:5px;color:var(--muted);font-size:11px;font-weight:800}
+.exercise-log input{width:100%;min-width:0;padding:8px 9px;border-radius:10px}
+.field-error{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(255,124,148,.08)!important}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+:focus-visible{outline:3px solid rgba(121,231,255,.72);outline-offset:3px}
+
+@media(max-width:1100px){
+  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:720px){
+  .hero-tools{width:100%}.hero-tools .btn{flex:1}
+  .program-settings{align-items:stretch;flex-direction:column}.program-settings input{width:100%}
+  .mobile-table-hint{display:block}
+  .table-wrap{margin-right:-16px;padding-right:16px;scrollbar-color:rgba(121,231,255,.45) rgba(255,255,255,.04)}
+  .table-wrap table{min-width:860px}
+  .table-wrap th:nth-child(3),.table-wrap td:nth-child(3),.table-wrap th:nth-child(4),.table-wrap td:nth-child(4){display:table-cell}
+  .table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:2;background:#15202e}
+  .wellbeing-panel,.summary-section{padding:16px}.wellbeing-grid{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:430px){.wellbeing-grid,.summary-grid{grid-template-columns:1fr}.exercise-log{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
