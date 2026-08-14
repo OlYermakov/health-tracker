@@ -39,10 +39,25 @@ const WORKOUT_PLANS = {
   }
 };
 
-const KEY = "healthGlassTracker_v1";
-const WEEKLY_WORKOUT_TARGET = 2;
+const LEGACY_TRACKER_KEY = "healthGlassTracker_v1";
+const LEGACY_NOTES_KEY = "healthGlassDayNotes_v1";
+const UNIFIED_KEY = "healthTrackerUnified_v3";
+const WEEKLY_ACTIVITY_TARGET = 2;
+const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
 let currentPlan = "A";
+
+function readUnifiedStore(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(UNIFIED_KEY)||"null");
+    return parsed&&typeof parsed==="object"?parsed:null;
+  }catch(e){return null;}
+}
+
+function writeUnifiedSection(section,value){
+  const current=readUnifiedStore()||{};
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:3,[section]:value}));
+}
 
 function blankSession(planKey){
   return {day:"", done:false, exercises:WORKOUT_PLANS[planKey].exercises.map(()=>false)};
@@ -52,7 +67,7 @@ function blankWeek(){
     startWeight:"",
     endWeight:"",
     mood:"",
-    days:days.map(()=>({breakfast:false,vegetables:false,water:false,workout:false})),
+    days:days.map(()=>({breakfast:false,vegetables:false,water:false,activity:false})),
     training:{A:blankSession("A"),B:blankSession("B")}
   };
 }
@@ -67,44 +82,105 @@ function normalizeSession(oldSession, planKey){
 function normalizeState(parsed){
   if(!parsed || !Array.isArray(parsed.weeks) || parsed.weeks.length!==12) return defaultState();
   return {
-    weeks:parsed.weeks.map((week)=>({
-      startWeight:week?.startWeight ?? "",
-      endWeight:week?.endWeight ?? "",
-      mood:week?.mood ?? "",
-      days:days.map((_,i)=>({
-        breakfast:Boolean(week?.days?.[i]?.breakfast),
-        vegetables:Boolean(week?.days?.[i]?.vegetables),
-        water:Boolean(week?.days?.[i]?.water),
-        workout:Boolean(week?.days?.[i]?.workout)
-      })),
-      training:{
+    weeks:parsed.weeks.map((week)=>{
+      const training={
         A:normalizeSession(week?.training?.A,"A"),
         B:normalizeSession(week?.training?.B,"B")
-      }
-    }))
+      };
+      return {
+        startWeight:week?.startWeight ?? "",
+        endWeight:week?.endWeight ?? "",
+        mood:week?.mood ?? "",
+        days:days.map((_,i)=>{
+          const oldDay=week?.days?.[i]||{};
+          const migratedActivity=oldDay.activity!==undefined?Boolean(oldDay.activity):Boolean(oldDay.workout);
+          return {
+            breakfast:Boolean(oldDay.breakfast),
+            vegetables:Boolean(oldDay.vegetables),
+            water:Boolean(oldDay.water),
+            activity:migratedActivity
+          };
+        }),
+        training
+      };
+    })
   };
 }
-let state=load();
 
 function load(){
   try{
-    const raw=localStorage.getItem(KEY);
-    return raw?normalizeState(JSON.parse(raw)):defaultState();
+    const unified=readUnifiedStore();
+    if(unified?.tracker)return normalizeState(unified.tracker);
+    const legacy=localStorage.getItem(LEGACY_TRACKER_KEY);
+    return legacy?normalizeState(JSON.parse(legacy)):defaultState();
   }catch(e){ return defaultState(); }
 }
-function persist(){ localStorage.setItem(KEY,JSON.stringify(state)); }
+let state=load();
+
+function emptyNotes(){return Array.from({length:12},()=>Array.from({length:7},()=>""));}
+function normalizeNotes(parsed){
+  if(!Array.isArray(parsed)||parsed.length!==12)return emptyNotes();
+  return Array.from({length:12},(_,weekIndex)=>
+    Array.from({length:7},(_,dayIndex)=>typeof parsed?.[weekIndex]?.[dayIndex]==="string"?parsed[weekIndex][dayIndex]:""));
+}
+function loadNotes(){
+  try{
+    const unified=readUnifiedStore();
+    if(unified?.notes)return normalizeNotes(unified.notes);
+    return normalizeNotes(JSON.parse(localStorage.getItem(LEGACY_NOTES_KEY)||"null"));
+  }catch(e){return emptyNotes();}
+}
+const dayNotes=loadNotes();
+
+function migrateUnifiedStore(){
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:3,tracker:state,notes:dayNotes,enhancements}));
+}
+function persist(){writeUnifiedSection("tracker",state);}
 function save(){ persist(); renderAll(); }
-function workoutCount(w){ return w.days.filter(d=>d.workout).length; }
+function completedSessionOnDay(w,dayIndex){
+  return [w.training.A,w.training.B].some(session=>session.done&&Number(session.day)===dayIndex);
+}
+function dayIsActive(w,dayIndex){return Boolean(w.days[dayIndex].activity)||completedSessionOnDay(w,dayIndex);}
+function activityCount(w){return w.days.reduce((total,_,index)=>total+Number(dayIsActive(w,index)),0);}
+function completedGymCount(w){return Number(w.training.A.done)+Number(w.training.B.done);}
 function completionOf(w){
   let done=0;
   w.days.forEach(d=>["breakfast","vegetables","water"].forEach(k=>{if(d[k])done++;}));
-  done+=Math.min(workoutCount(w),WEEKLY_WORKOUT_TARGET);
-  return done/(21+WEEKLY_WORKOUT_TARGET);
+  done+=Math.min(activityCount(w),WEEKLY_ACTIVITY_TARGET);
+  return done/(21+WEEKLY_ACTIVITY_TARGET);
 }
 function weightNumber(v){
   if(v===null||v===undefined||v==="") return null;
   const n=Number(String(v).replace(",","."));
   return Number.isFinite(n)?n:null;
+}
+function programWeightStats(){
+  const start=state.weeks.map(week=>weightNumber(week.startWeight)).find(value=>value!==null)??null;
+  const ends=state.weeks.map(week=>weightNumber(week.endWeight)).filter(value=>value!==null);
+  const current=ends.length?ends[ends.length-1]:null;
+  const final=weightNumber(state.weeks[11].endWeight);
+  return {
+    start,current,final,
+    currentDelta:start!==null&&current!==null?current-start:null,
+    finalDelta:start!==null&&final!==null?final-start:null
+  };
+}
+function formatWeightDelta(delta){return delta===null?"—":`${delta>0?"+":""}${delta.toFixed(1)} кг`;}
+
+function saveNotes(){writeUnifiedSection("notes",dayNotes);}
+function escapeNote(value){
+  return String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function autoSizeNote(element){
+  element.style.height="auto";
+  element.style.height=Math.min(Math.max(element.scrollHeight,38),112)+"px";
+}
+function updateDayNote(dayIndex,element){
+  dayNotes[currentWeek-1][dayIndex]=element.value;
+  saveNotes();autoSizeNote(element);element.classList.add("saved");
+  clearTimeout(element._savedTimer);
+  element._savedTimer=setTimeout(()=>element.classList.remove("saved"),500);
 }
 
 function renderWeekSelect(){
@@ -126,29 +202,37 @@ function renderRows(){
   days.forEach((day,i)=>{
     const tr=document.createElement("tr");
     if(day.recommended)tr.classList.add("workout");
+    const hint=day.note||"Додати нотатку…";
+    const note=dayNotes[currentWeek-1][i]||"";
     tr.innerHTML=`
       <td>${day.name}</td>
       <td>${checkHTML(i,"breakfast",w.days[i].breakfast)}</td>
       <td>${checkHTML(i,"vegetables",w.days[i].vegetables)}</td>
       <td>${checkHTML(i,"water",w.days[i].water)}</td>
-      <td>${checkHTML(i,"workout",w.days[i].workout)}</td>
-      <td>${day.note||""}</td>`;
+      <td>${checkHTML(i,"activity",dayIsActive(w,i))}</td>
+      <td class="note-cell">
+        <textarea class="day-note" rows="1" maxlength="500"
+          aria-label="Нотатка: ${day.name}"
+          placeholder="${escapeNote(hint)}"
+          oninput="updateDayNote(${i},this)">${escapeNote(note)}</textarea>
+      </td>`;
     tbody.appendChild(tr);
   });
+  requestAnimationFrame(()=>document.querySelectorAll(".day-note").forEach(autoSizeNote));
 }
 function checkHTML(i,key,on){
-  return `<button class="check ${on?'on':''}" type="button" onclick="toggleCheck(${i},'${key}')" aria-label="${on?'Виконано':'Не виконано'}">✓</button>`;
+  const labels={breakfast:"білковий сніданок",vegetables:"овочі",water:"вода",activity:"активність"};
+  const action=on?"Виконано":"Не виконано";
+  return `<button class="check ${on?'on':''}" type="button" onclick="toggleCheck(${i},'${key}')" aria-pressed="${on}" aria-label="${days[i].name}: ${labels[key]}. ${action}">✓</button>`;
 }
 function toggleCheck(i,key){
   const w=state.weeks[currentWeek-1];
   const d=w.days[i];
-  d[key]=!d[key];
-  if(key==="workout" && !d.workout){
-    ["A","B"].forEach(planKey=>{
-      const s=w.training[planKey];
-      if(s.done && Number(s.day)===i) s.done=false;
-    });
+  if(key==="activity"&&completedSessionOnDay(w,i)){
+    showToast("Цей день уже зараховано завершеним тренуванням A або B.");
+    return;
   }
+  d[key]=!d[key];
   save();
 }
 function renderFields(){
@@ -167,21 +251,14 @@ function renderWeekNav(){
 }
 function renderCards(){
   const w=state.weeks[currentWeek-1],pct=completionOf(w);
-  document.getElementById("cardWeek").textContent=currentWeek;
-  document.getElementById("cardCompletion").textContent=Math.round(pct*100)+"%";
-  const firstStart=state.weeks.map(x=>weightNumber(x.startWeight)).find(x=>x!==null);
-  const ends=state.weeks.map(x=>weightNumber(x.endWeight)).filter(x=>x!==null);
-  const current=ends.length?ends[ends.length-1]:null;
-  document.getElementById("cardStart").textContent=firstStart!==undefined&&firstStart!==null?firstStart.toFixed(1)+" кг":"—";
-  document.getElementById("cardCurrent").textContent=current!==null?current.toFixed(1)+" кг":"—";
-  const delta=(firstStart!==undefined&&firstStart!==null&&current!==null)?current-firstStart:null;
+  const weights=programWeightStats();
+  document.getElementById("cardStart").textContent=weights.start!==null?weights.start.toFixed(1)+" кг":"—";
+  document.getElementById("cardCurrent").textContent=weights.current!==null?weights.current.toFixed(1)+" кг":"—";
   const deltaEl=document.getElementById("cardDelta");
-  deltaEl.textContent=delta!==null?(delta>0?"+":"")+delta.toFixed(1)+" кг":"—";
-  deltaEl.style.color=delta!==null&&delta<0?"var(--green)":"var(--red)";
+  deltaEl.textContent=formatWeightDelta(weights.currentDelta);
+  deltaEl.style.color=weights.currentDelta!==null&&weights.currentDelta<0?"var(--green)":"var(--red)";
   document.getElementById("ringArc").style.strokeDashoffset=377*(1-pct);
   document.getElementById("ringPct").textContent=Math.round(pct*100)+"%";
-  const count=workoutCount(w);
-  document.getElementById("workoutStatus").textContent=`${count} / ${WEEKLY_WORKOUT_TARGET} тренування`;
 }
 
 function selectPlan(planKey){ currentPlan=planKey; renderTraining(); }
@@ -190,7 +267,7 @@ function renderTraining(){
   const plan=WORKOUT_PLANS[currentPlan];
   const session=w.training[currentPlan];
   document.getElementById("trainingWeek").textContent=currentWeek;
-  document.getElementById("trainingWeekStatus").textContent=`${Math.min(workoutCount(w),2)} / 2`;
+  document.getElementById("trainingWeekStatus").textContent=`${completedGymCount(w)} / 2`;
   document.getElementById("tabA").classList.toggle("active",currentPlan==="A");
   document.getElementById("tabB").classList.toggle("active",currentPlan==="B");
   const doneExercises=session.exercises.filter(Boolean).length;
@@ -229,35 +306,43 @@ function renderTraining(){
       <button class="complete-session ${session.done?'done':''}" type="button" onclick="toggleSessionDone('${currentPlan}')" ${session.day===''?'disabled':''}>${actionText}</button>
       <div class="session-note">Перші 2 тижні тримай вагу помірною: закінчуй підхід із запасом приблизно 3–4 повторення. Коли верхня межа повторів дається чисто у двох підходах і коліна спокійні — наступного разу додай найменший крок ваги.</div>
     </div>`;
+  if(typeof injectExerciseTechnique==="function")injectExerciseTechnique();
+  if(typeof injectExerciseLogs==="function")injectExerciseLogs();
 }
 function toggleExercise(planKey,index){
   const session=state.weeks[currentWeek-1].training[planKey];
   session.exercises[index]=!session.exercises[index];
   persist();renderTraining();
 }
-function dayUsedByOtherCompletedSession(w,planKey,dayIndex){
-  return ["A","B"].some(k=>k!==planKey && w.training[k].done && String(w.training[k].day)===String(dayIndex));
-}
 function setSessionDay(planKey,value){
   const w=state.weeks[currentWeek-1];
   const session=w.training[planKey];
-  const oldDay=session.day;
-  if(session.done && oldDay!=="" && !dayUsedByOtherCompletedSession(w,planKey,oldDay)) w.days[Number(oldDay)].workout=false;
+  const other=planKey==="A"?"B":"A";
+  const otherSession=w.training[other];
+  if(value!==""&&String(otherSession.day)===String(value)){
+    showToast(`Тренування ${other} вже заплановане на цей день. Залиши день відпочинку.`);
+    renderTraining();return;
+  }
   session.day=value;
-  if(session.done && value!=="") w.days[Number(value)].workout=true;
   save();
 }
 function toggleSessionDone(planKey){
   const w=state.weeks[currentWeek-1];
   const session=w.training[planKey];
   if(session.day==="")return;
-  session.done=!session.done;
-  const dayIndex=Number(session.day);
-  if(session.done){
-    w.days[dayIndex].workout=true;
-  }else if(!dayUsedByOtherCompletedSession(w,planKey,dayIndex)){
-    w.days[dayIndex].workout=false;
+  if(!session.done){
+    const completed=session.exercises.filter(Boolean).length;
+    if(completed<MIN_EXERCISES_TO_COMPLETE){
+      showToast(`Щоб зарахувати тренування, познач щонайменше ${MIN_EXERCISES_TO_COMPLETE} вправи.`);
+      return;
+    }
+    const other=planKey==="A"?"B":"A";
+    const otherSession=w.training[other];
+    if(otherSession.done&&String(otherSession.day)===String(session.day)){
+      showToast(`Тренування ${other} вже зараховане в цей день.`);return;
+    }
   }
+  session.done=!session.done;
   save();
 }
 
@@ -298,12 +383,28 @@ function drawWeightChart(values,minY,maxY){
   valid.forEach(item=>{const p=xy(item);ctx.fillStyle="#b79cff";ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();});
 }
 function renderAll(){
-  renderWeekSelect();renderRows();renderFields();renderWeekNav();renderCards();renderTraining();requestAnimationFrame(drawCharts);
+  renderWeekSelect();renderRows();renderFields();renderWeekNav();renderCards();renderTraining();
+  if(typeof renderEnhancements==="function")renderEnhancements();
+  requestAnimationFrame(drawCharts);
+}
+
+function validateWeightInput(input){
+  const value=input.value;
+  const invalid=value!==""&&(!Number.isFinite(Number(value))||Number(value)<40||Number(value)>250);
+  input.classList.toggle("field-error",invalid);
+  input.setAttribute("aria-invalid",String(invalid));
+  if(invalid)showToast("Вкажи вагу від 40 до 250 кг.");
+  return !invalid;
 }
 
 document.getElementById("weekSelect").addEventListener("change",e=>{currentWeek=Number(e.target.value);renderAll();});
-document.getElementById("startWeight").addEventListener("change",e=>{state.weeks[currentWeek-1].startWeight=e.target.value;save();});
-document.getElementById("endWeight").addEventListener("change",e=>{state.weeks[currentWeek-1].endWeight=e.target.value;save();});
+[
+  ["startWeight","startWeight"],
+  ["endWeight","endWeight"]
+].forEach(([id,key])=>{
+  const input=document.getElementById(id);
+  input.addEventListener("input",event=>{state.weeks[currentWeek-1][key]=event.target.value;persist();});
+  input.addEventListener("blur",event=>{if(validateWeightInput(event.target))renderAll();});
+});
 document.getElementById("mood").addEventListener("change",e=>{state.weeks[currentWeek-1].mood=e.target.value;save();});
 window.addEventListener("resize",()=>requestAnimationFrame(drawCharts));
-renderMood();renderAll();

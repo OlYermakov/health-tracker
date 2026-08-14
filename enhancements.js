@@ -1,6 +1,4 @@
-const ENHANCEMENTS_KEY="healthTrackerEnhancements_v2";
-const NOTES_STORAGE_KEY="healthGlassDayNotes_v1";
-const MIN_EXERCISES_TO_COMPLETE=4;
+const LEGACY_ENHANCEMENTS_KEY="healthTrackerEnhancements_v2";
 
 function localISODate(date=new Date()){
   const y=date.getFullYear();
@@ -20,9 +18,7 @@ function blankEnhancementWeek(){
   };
 }
 
-function defaultEnhancements(){
-  return {version:2,startDate:localISODate(),lastBackupAt:"",weeks:Array.from({length:12},blankEnhancementWeek)};
-}
+function defaultEnhancements(){return {version:3,startDate:localISODate(),lastBackupAt:"",weeks:Array.from({length:12},blankEnhancementWeek)};}
 
 function normalizeEnhancements(parsed){
   const clean=defaultEnhancements();
@@ -50,15 +46,17 @@ function normalizeEnhancements(parsed){
 }
 
 function loadEnhancements(){
-  try{return normalizeEnhancements(JSON.parse(localStorage.getItem(ENHANCEMENTS_KEY)||"null"));}
+  try{
+    const unified=readUnifiedStore();
+    if(unified?.enhancements)return normalizeEnhancements(unified.enhancements);
+    return normalizeEnhancements(JSON.parse(localStorage.getItem(LEGACY_ENHANCEMENTS_KEY)||"null"));
+  }
   catch(e){return defaultEnhancements();}
 }
 
 let enhancements=loadEnhancements();
 
-function persistEnhancements(){
-  localStorage.setItem(ENHANCEMENTS_KEY,JSON.stringify(enhancements));
-}
+function persistEnhancements(){writeUnifiedSection("enhancements",enhancements);}
 
 function showToast(message){
   const toast=document.getElementById("appToast");
@@ -102,15 +100,12 @@ function activeWeek(week,index){
 
 function renderSummary(){
   const active=state.weeks.map((week,index)=>({week,index})).filter(({week,index})=>activeWeek(week,index));
-  const workouts=state.weeks.reduce((sum,week)=>sum+workoutCount(week),0);
+  const workouts=state.weeks.reduce((sum,week)=>sum+completedGymCount(week),0);
   const average=active.length?Math.round(active.reduce((sum,item)=>sum+completionOf(item.week),0)/active.length*100):0;
-  const first=state.weeks.map(week=>weightNumber(week.startWeight)).find(value=>value!==null);
-  const ends=state.weeks.map(week=>weightNumber(week.endWeight)).filter(value=>value!==null);
-  const current=ends.length?ends[ends.length-1]:null;
-  const delta=first!==undefined&&first!==null&&current!==null?current-first:null;
+  const weights=programWeightStats();
   document.getElementById("summaryWorkouts").textContent=String(workouts);
   document.getElementById("summaryCompletion").textContent=`${average}%`;
-  document.getElementById("summaryWeight").textContent=delta===null?"—":`${delta>0?"+":""}${delta.toFixed(1)} кг`;
+  document.getElementById("summaryWeight").textContent=formatWeightDelta(weights.finalDelta);
   document.getElementById("summaryBackup").textContent=enhancements.lastBackupAt?
     new Intl.DateTimeFormat("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(enhancements.lastBackupAt)):"Немає";
 }
@@ -145,7 +140,6 @@ function renderEnhancements(){
   const range=weekDates(currentWeek);
   document.getElementById("programStartDate").value=enhancements.startDate;
   document.getElementById("currentWeekRange").textContent=`Тиждень ${currentWeek}: ${range.long}`;
-  document.getElementById("cardWeekDates").textContent=range.short;
   document.querySelectorAll("#weekSelect option").forEach((option,index)=>{option.textContent=`Тиждень ${index+1} · ${weekDates(index+1).short}`;});
   document.querySelectorAll("#weekNav .week-btn").forEach((button,index)=>{button.title=weekDates(index+1).long;button.setAttribute("aria-label",`Тиждень ${index+1}, ${weekDates(index+1).long}`);});
   renderWellbeing();
@@ -193,69 +187,11 @@ function injectExerciseLogs(){
   document.getElementById("tabB").setAttribute("aria-selected",String(currentPlan==="B"));
 }
 
-const accessibleHabitLabels={breakfast:"білковий сніданок",vegetables:"овочі",water:"вода",workout:"тренування"};
-checkHTML=function(index,key,on){
-  const action=on?"Виконано":"Не виконано";
-  return `<button class="check ${on?'on':''}" type="button" onclick="toggleCheck(${index},'${key}')" aria-pressed="${on}" aria-label="${days[index].name}: ${accessibleHabitLabels[key]}. ${action}">✓</button>`;
-};
-
-const renderTrainingBeforeEnhancements=renderTraining;
-renderTraining=function(){
-  renderTrainingBeforeEnhancements();
-  injectExerciseLogs();
-};
-
-const renderAllBeforeEnhancements=renderAll;
-renderAll=function(){
-  renderAllBeforeEnhancements();
-  renderEnhancements();
-};
-
-const setSessionDayBeforeEnhancements=setSessionDay;
-setSessionDay=function(planKey,value){
-  const other=planKey==="A"?"B":"A";
-  const otherSession=state.weeks[currentWeek-1].training[other];
-  if(value!==""&&String(otherSession.day)===String(value)){
-    showToast(`Тренування ${other} вже заплановане на цей день. Залиши день відпочинку.`);
-    renderTraining();
-    return;
-  }
-  setSessionDayBeforeEnhancements(planKey,value);
-};
-
-const toggleSessionDoneBeforeEnhancements=toggleSessionDone;
-toggleSessionDone=function(planKey){
-  const session=state.weeks[currentWeek-1].training[planKey];
-  if(!session.done){
-    const completed=session.exercises.filter(Boolean).length;
-    if(completed<MIN_EXERCISES_TO_COMPLETE){
-      showToast(`Щоб зарахувати тренування, познач щонайменше ${MIN_EXERCISES_TO_COMPLETE} вправи.`);
-      return;
-    }
-    const other=planKey==="A"?"B":"A";
-    const otherSession=state.weeks[currentWeek-1].training[other];
-    if(otherSession.done&&String(otherSession.day)===String(session.day)){
-      showToast(`Тренування ${other} вже зараховане в цей день.`);
-      return;
-    }
-  }
-  toggleSessionDoneBeforeEnhancements(planKey);
-};
-
-function validateWeightInput(input){
-  const value=input.value;
-  const invalid=value!==""&&(!Number.isFinite(Number(value))||Number(value)<40||Number(value)>250);
-  input.classList.toggle("field-error",invalid);
-  input.setAttribute("aria-invalid",String(invalid));
-  if(invalid)showToast("Вкажи вагу від 40 до 250 кг.");
-  return !invalid;
-}
-
 function exportBackup(){
   const payload={
-    format:"health-tracker-backup",version:2,exportedAt:new Date().toISOString(),
+    format:"health-tracker-backup",version:3,exportedAt:new Date().toISOString(),
     tracker:state,
-    notes:JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY)||"null"),
+    notes:dayNotes,
     enhancements
   };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
@@ -271,9 +207,13 @@ async function importBackup(file){
   try{
     const payload=JSON.parse(await file.text());
     if(payload?.format!=="health-tracker-backup"||!Array.isArray(payload?.tracker?.weeks)||payload.tracker.weeks.length!==12)throw new Error("invalid");
-    localStorage.setItem(KEY,JSON.stringify(payload.tracker));
-    if(Array.isArray(payload.notes))localStorage.setItem(NOTES_STORAGE_KEY,JSON.stringify(payload.notes));
-    localStorage.setItem(ENHANCEMENTS_KEY,JSON.stringify(normalizeEnhancements(payload.enhancements)));
+    const restored={
+      version:3,
+      tracker:normalizeState(payload.tracker),
+      notes:normalizeNotes(payload.notes),
+      enhancements:normalizeEnhancements(payload.enhancements)
+    };
+    localStorage.setItem(UNIFIED_KEY,JSON.stringify(restored));
     showToast("Копію відновлено. Оновлюю застосунок…");
     setTimeout(()=>location.reload(),700);
   }catch(e){showToast("Цей файл не є коректною резервною копією трекера.");}
@@ -295,15 +235,6 @@ Object.entries(wellbeingBindings).forEach(([id,key])=>{
   });
 });
 
-["startWeight","endWeight"].forEach(id=>{
-  const input=document.getElementById(id);
-  input.addEventListener("input",event=>{
-    state.weeks[currentWeek-1][id==="startWeight"?"startWeight":"endWeight"]=event.target.value;
-    persist();
-  });
-  input.addEventListener("blur",event=>{if(validateWeightInput(event.target))renderAll();});
-});
-
 document.getElementById("exportBackup").addEventListener("click",exportBackup);
 document.getElementById("importBackup").addEventListener("click",()=>document.getElementById("backupFile").click());
 document.getElementById("backupFile").addEventListener("change",event=>{
@@ -312,4 +243,6 @@ document.getElementById("backupFile").addEventListener("change",event=>{
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 
+migrateUnifiedStore();
+renderMood();
 renderAll();

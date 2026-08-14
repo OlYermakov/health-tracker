@@ -11,18 +11,18 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=6" />
-<link rel="stylesheet" href="training.css" />
-<link rel="stylesheet" href="notes.css" />
-<link rel="stylesheet" href="exercise-details.css" />
-<link rel="stylesheet" href="enhancements.css?v=7" />
+<link rel="stylesheet" href="style.css?v=8" />
+<link rel="stylesheet" href="training.css?v=8" />
+<link rel="stylesheet" href="notes.css?v=8" />
+<link rel="stylesheet" href="exercise-details.css?v=8" />
+<link rel="stylesheet" href="enhancements.css?v=8" />
 </head>
 <body>
 <div class="shell">
   <section class="hero glass">
     <div>
       <h1>12-тижневий health tracker</h1>
-      <div class="sub">Звички, вага, самопочуття і дві короткі програми для залу — в одному місці. Дані зберігаються локально у твоєму браузері.</div>
+      <div class="sub">Звички, активність, вага, самопочуття і дві короткі програми для залу — в одному місці. Дані зберігаються локально у твоєму браузері.</div>
     </div>
     <div class="hero-tools" aria-label="Керування даними">
       <button class="btn" id="exportBackup" type="button">Зберегти копію</button>
@@ -50,8 +50,6 @@
     </section>
 
     <section class="cards">
-      <div class="card glass"><div class="label">Поточний тиждень</div><div class="value violet" id="cardWeek">1</div><div class="card-caption" id="cardWeekDates"></div></div>
-      <div class="card glass"><div class="label">Виконання</div><div class="value cyan" id="cardCompletion">0%</div></div>
       <div class="card glass"><div class="label">Стартова вага</div><div class="value" id="cardStart">—</div></div>
       <div class="card glass"><div class="label">Поточна вага</div><div class="value green" id="cardCurrent">—</div></div>
       <div class="card glass"><div class="label">Зміна ваги</div><div class="value red" id="cardDelta">—</div></div>
@@ -73,7 +71,7 @@
             <input id="endWeight" type="number" inputmode="decimal" min="40" max="250" step="0.1" placeholder="93.8" />
           </div>
           <div class="field">
-            <label for="mood">Самопочуття 1–10</label>
+            <label for="mood">Настрій 1–10</label>
             <select id="mood"></select>
           </div>
         </div>
@@ -87,7 +85,7 @@
                 <th>Білковий сніданок</th>
                 <th>Овочі</th>
                 <th>Вода</th>
-                <th>Тренування</th>
+                <th>Активність</th>
                 <th>Нотатка</th>
               </tr>
             </thead>
@@ -109,14 +107,14 @@
               <div class="center"><div><div class="pct" id="ringPct">0%</div><small>цього тижня</small></div></div>
             </div>
             <div class="tips">
-              <div class="tip"><b>Ціль:</b> <span id="workoutStatus">0 / 2 тренування</span> на тиждень.</div>
+              <div class="tip"><b>Ціль:</b> щонайменше 2 активні дні на тиждень.</div>
               <div class="tip"><b>Коли:</b> у будь-які зручні дні. Залишай день відпочинку між A і B.</div>
               <div class="tip"><b>Фокус:</b> регулярність, а не ідеальність.</div>
             </div>
           </div>
         </div>
 
-        <div class="panel glass">
+        <div class="panel glass week-jump-panel">
           <h2>Перейти до тижня</h2>
           <div class="week-nav" id="weekNav"></div>
         </div>
@@ -131,7 +129,7 @@
       </div>
       <div class="wellbeing-grid">
         <div class="field"><label for="sleepHours">Сон, год/ніч</label><input id="sleepHours" type="number" min="0" max="14" step="0.5" inputmode="decimal" placeholder="7.0" /></div>
-        <div class="field"><label for="energyLevel">Енергія 1–10</label><select id="energyLevel"></select></div>
+        <div class="field"><label for="energyLevel">Фізична енергія 1–10</label><select id="energyLevel"></select></div>
         <div class="field"><label for="activityMinutes">Активність, хв/тиждень</label><input id="activityMinutes" type="number" min="0" max="2000" step="5" inputmode="numeric" placeholder="90" /></div>
         <div class="field"><label for="leftKneePain">Ліве коліно 0–10</label><select id="leftKneePain"></select></div>
         <div class="field"><label for="rightKneePain">Праве коліно 0–10</label><select id="rightKneePain"></select></div>
@@ -186,9 +184,9 @@
     <div class="eyebrow">Підсумок</div>
     <h2 id="summaryTitle">Результат програми</h2>
     <div class="summary-grid">
-      <div class="summary-card"><span>Тренувань</span><strong id="summaryWorkouts">0</strong></div>
+      <div class="summary-card"><span>Тренувань A/B</span><strong id="summaryWorkouts">0</strong></div>
       <div class="summary-card"><span>Середнє виконання</span><strong id="summaryCompletion">0%</strong></div>
-      <div class="summary-card"><span>Зміна ваги</span><strong id="summaryWeight">—</strong></div>
+      <div class="summary-card" title="Показник з’явиться після внесення ваги наприкінці 12-го тижня"><span>Фінальна зміна ваги</span><strong id="summaryWeight">—</strong></div>
       <div class="summary-card"><span>Остання копія</span><strong id="summaryBackup">Немає</strong></div>
     </div>
   </section>
@@ -206,9 +204,8 @@
   <div class="footer-note">Дані зберігаються локально у цьому браузері. Періодично завантажуй резервну копію. Це не медичний застосунок і не замінює консультацію лікаря.</div>
 </div>
 <div class="toast" id="appToast" role="status" aria-live="polite"></div>
-<script src="app.js"></script>
-<script src="notes.js"></script>
-<script src="exercise-details.js"></script>
-<script src="enhancements.js"></script>
+<script src="app.js?v=8"></script>
+<script src="exercise-details.js?v=8"></script>
+<script src="enhancements.js?v=8"></script>
 </body>
 </html>
