@@ -25,7 +25,7 @@
   .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:720px){
-  body{padding:10px;overflow-x:hidden}
+  body{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));overflow-x:hidden}
   .shell{width:100%;min-width:0}
   .glass{border-radius:20px}
   .hero{padding:18px;gap:15px}
