@@ -25,14 +25,86 @@
   .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:720px){
-  .hero-tools{width:100%}.hero-tools .btn{flex:1}
-  .program-settings{align-items:stretch;flex-direction:column}.program-settings input{width:100%}
-  .mobile-table-hint{display:block}
-  .table-wrap{margin-right:-16px;padding-right:16px;scrollbar-color:rgba(121,231,255,.45) rgba(255,255,255,.04)}
-  .table-wrap table{min-width:860px}
-  .table-wrap th:nth-child(3),.table-wrap td:nth-child(3),.table-wrap th:nth-child(4),.table-wrap td:nth-child(4){display:table-cell}
-  .table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:2;background:#15202e}
-  .wellbeing-panel,.summary-section{padding:16px}.wellbeing-grid{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}
+  body{padding:10px;overflow-x:hidden}
+  .shell{width:100%;min-width:0}
+  .glass{border-radius:20px}
+  .hero{padding:18px;gap:15px}
+  .hero h1{font-size:clamp(28px,9vw,38px);line-height:1.04;margin-top:0}
+  .hero .sub{font-size:13px;line-height:1.5}
+  .hero-tools{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .hero-tools .btn{width:100%;min-height:44px;padding:10px 8px}
+  .section-nav{top:6px;margin-top:10px;padding:5px;border-radius:16px}
+  .section-nav a{min-width:0;padding:9px 4px;font-size:12px}
+  .program-settings{margin-top:12px;padding:15px;align-items:stretch;flex-direction:column;gap:12px}
+  .program-settings input{width:100%}
+  .date-range{font-size:15px;line-height:1.35}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+  .card{min-height:94px;padding:13px;border-radius:18px}
+  .card .label{font-size:10px;line-height:1.3}
+  .card .value{font-size:26px;margin-top:10px}
+  .card:last-child{grid-column:1/-1;min-height:82px}
+  .layout{gap:12px;margin-top:12px}
+  .panel{padding:14px}
+  .week-top{display:grid;grid-template-columns:1fr 1fr;align-items:end;gap:10px;margin-bottom:14px}
+  .week-top .field{min-width:0}
+  .week-top input,.week-top select{width:100%;min-width:0;max-width:100%}
+  .mobile-table-hint{display:none}
+  .table-wrap{overflow:visible;margin:0;padding:0;border:0}
+  .table-wrap:focus-visible{outline:none}
+  .table-wrap table,.table-wrap tbody{display:block;width:100%;min-width:0}
+  .table-wrap thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .table-wrap tbody{display:grid;gap:10px}
+  .table-wrap tr{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+    padding:13px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.035)
+  }
+  .table-wrap tr.workout{background:linear-gradient(135deg,rgba(121,231,255,.08),rgba(183,156,255,.055));border-color:rgba(121,231,255,.18)}
+  .table-wrap td,.table-wrap td:nth-child(3),.table-wrap td:nth-child(4){
+    display:grid;min-width:0;padding:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px
+  }
+  .table-wrap td:first-child{
+    grid-column:1/-1;display:block;position:static;padding:0 1px 5px;background:transparent;border:0;border-radius:0;
+    color:var(--text);font-size:17px;font-weight:900
+  }
+  .table-wrap td:nth-child(n+2):nth-child(-n+5){grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:7px}
+  .table-wrap td:nth-child(n+2):nth-child(-n+5)::before{color:var(--muted);font-size:11px;font-weight:800;line-height:1.25}
+  .table-wrap td:nth-child(2)::before{content:"Білковий сніданок"}
+  .table-wrap td:nth-child(3)::before{content:"Овочі"}
+  .table-wrap td:nth-child(4)::before{content:"Вода"}
+  .table-wrap td:nth-child(5)::before{content:"Тренування"}
+  .table-wrap td:nth-child(6){grid-column:1/-1;padding:0;background:transparent;border:0}
+  .table-wrap .check{width:44px;height:44px;border-radius:13px;font-size:20px}
+  .table-wrap .note-cell,.table-wrap .day-note{width:100%;min-width:0;max-width:none}
+  .table-wrap .day-note{min-height:44px;padding:11px 12px;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.07)}
+  .ring-wrap{gap:12px}.ring{transform:scale(.92);margin:-6px}
+  .wellbeing-panel,.summary-section{margin-top:12px;padding:15px}
+  .wellbeing-panel{gap:16px}
+  .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .wellbeing-grid .field{min-width:0}
+  .wellbeing-grid input,.wellbeing-grid select{min-height:44px}
+  .summary-card{padding:13px;min-width:0}
+  .summary-card strong{font-size:19px}
+  .training-section{margin-top:12px;padding:15px}
+  .training-head{gap:12px}
+  .training-head h2{font-size:25px}
+  .training-week-card{min-width:0}
+  .safety-strip{grid-template-columns:32px 1fr;padding:12px;gap:9px}
+  .safety-icon{width:30px;height:30px}
+  .training-tab{padding:12px;font-size:16px}
+  .plan-toolbar{margin-top:17px;gap:13px}
+  .exercise-card{padding:12px;border-radius:16px}
+  .exercise-main{min-width:0}
+  .exercise-main h3{overflow-wrap:anywhere}
+  .exercise-log{grid-template-columns:1fr 1fr;width:100%}
+  .session-footer{gap:10px}
+  .complete-session{min-height:46px}
+  .chart{height:200px}
 }
-@media(max-width:430px){.wellbeing-grid,.summary-grid{grid-template-columns:1fr}.exercise-log{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){
+  .wellbeing-grid,.summary-grid,.exercise-log{grid-template-columns:1fr 1fr}
+  .week-top{grid-template-columns:1fr 1fr}
+  .table-wrap tr{padding:11px;gap:7px}
+  .table-wrap td:nth-child(n+2):nth-child(-n+5){padding:8px;grid-template-columns:minmax(0,1fr) 42px}
+  .table-wrap .check{width:42px;height:42px}
+}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
