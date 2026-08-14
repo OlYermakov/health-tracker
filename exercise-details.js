@@ -35,10 +35,3 @@ function injectExerciseTechnique(){
     main.appendChild(details);
   });
 }
-
-const renderTrainingBase=renderTraining;
-renderTraining=function(){
-  renderTrainingBase();
-  injectExerciseTechnique();
-};
-renderTraining();
