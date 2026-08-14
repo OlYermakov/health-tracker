@@ -1,0 +1,14 @@
+.note-cell{min-width:220px;padding-top:8px;padding-bottom:8px}
+.day-note{
+  width:100%;min-width:200px;min-height:38px;max-height:112px;resize:none;overflow-y:auto;
+  border:1px solid transparent;border-radius:11px;padding:9px 10px;
+  background:rgba(255,255,255,.035);color:var(--text);font:inherit;font-size:12.5px;line-height:1.4;
+  outline:none;transition:border-color .18s,background .18s,box-shadow .18s;
+}
+.day-note::placeholder{color:rgba(159,176,198,.68)}
+.day-note:hover{background:rgba(255,255,255,.055);border-color:var(--line)}
+.day-note:focus{background:rgba(255,255,255,.07);border-color:rgba(121,231,255,.42);box-shadow:0 0 0 3px rgba(121,231,255,.07)}
+.day-note.saved{border-color:rgba(66,230,164,.32)}
+@media(max-width:720px){
+  .note-cell{min-width:180px}.day-note{min-width:165px;font-size:13px}
+}
