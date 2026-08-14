@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Health Glass — 12-тижневий трекер</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="shell">
+  <section class="hero glass">
+    <div>
+      <div class="eyebrow">12-тижневий health tracker</div>
+      <h1>Health Glass</h1>
+      <div class="sub">Темний інтерактивний дашборд у стилі Liquid Glass. Відмічай звички, тренування, вагу та самопочуття — прогрес зберігається локально в браузері.</div>
+    </div>
+    <div class="hero-actions">
+      <button class="btn primary" onclick="exportData()">Експорт даних</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">Імпорт</button>
+      <button class="btn" onclick="resetAll()">Скинути</button>
+      <input id="importFile" type="file" accept=".json" hidden onchange="importData(event)" />
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card glass"><div class="label">Поточний тиждень</div><div class="value violet" id="cardWeek">1</div></div>
+    <div class="card glass"><div class="label">Виконання</div><div class="value cyan" id="cardCompletion">0%</div></div>
+    <div class="card glass"><div class="label">Стартова вага</div><div class="value" id="cardStart">—</div></div>
+    <div class="card glass"><div class="label">Поточна вага</div><div class="value green" id="cardCurrent">—</div></div>
+    <div class="card glass"><div class="label">Зміна ваги</div><div class="value red" id="cardDelta">—</div></div>
+  </section>
+
+  <section class="layout">
+    <div class="panel glass">
+      <div class="week-top">
+        <div class="field">
+          <label>Тиждень</label>
+          <select id="weekSelect"></select>
+        </div>
+        <div class="field">
+          <label>Вага на старті, кг</label>
+          <input id="startWeight" inputmode="decimal" placeholder="Напр. 94.5">
+        </div>
+        <div class="field">
+          <label>Вага наприкінці, кг</label>
+          <input id="endWeight" inputmode="decimal" placeholder="93.8">
+        </div>
+        <div class="field">
+          <label>Самопочуття 1–10</label>
+          <select id="mood"></select>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>День</th>
+            <th>Білковий сніданок</th>
+            <th>Овочі</th>
+            <th>Вода</th>
+            <th>Тренування</th>
+            <th>Нотатка</th>
+          </tr>
+        </thead>
+        <tbody id="weekRows"></tbody>
+      </table>
+    </div>
+
+    <aside class="dash-side">
+      <div class="panel glass">
+        <h2>Виконання тижня</h2>
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="60" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+              <circle id="ringArc" cx="75" cy="75" r="60" fill="none" stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"/>
+              <defs><linearGradient id="grad"><stop stop-color="#79e7ff"/><stop offset="1" stop-color="#b79cff"/></linearGradient></defs>
+            </svg>
+            <div class="center"><div><div class="pct" id="ringPct">0%</div><small>цього тижня</small></div></div>
+          </div>
+          <div class="tips">
+            <div class="tip"><b>Середа:</b> зал 30–40 хв, щадно для колін.</div>
+            <div class="tip"><b>Субота:</b> зал або басейн 30–40 хв.</div>
+            <div class="tip"><b>Фокус:</b> регулярність, а не ідеальність.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel glass">
+        <h2>Перейти до тижня</h2>
+        <div class="week-nav" id="weekNav"></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="layout">
+    <div class="panel glass">
+      <h2>Динаміка ваги</h2>
+      <canvas class="chart" id="weightChart"></canvas>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--violet)"></i>вага наприкінці тижня</span>
+      </div>
+    </div>
+    <div class="panel glass">
+      <h2>Виконання по тижнях</h2>
+      <canvas class="chart" id="completionChart"></canvas>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--cyan)"></i>відсоток виконання</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel glass" style="margin-top:18px">
+    <h2>Швидкі варіанти сніданку</h2>
+    <div class="tips">
+      <div class="tip">2–3 яйця + 1 булочка</div>
+      <div class="tip">200–250 г творогу + 1 булочка</div>
+      <div class="tip">Грецький йогурт без цукру + 1 булочка</div>
+      <div class="tip">Протеїновий напій + банан</div>
+    </div>
+  </section>
+
+  <div class="footer-note">Дані зберігаються лише у localStorage цього браузера. Це не медичний застосунок і не замінює консультацію лікаря.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
