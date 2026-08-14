@@ -1,7 +1,7 @@
-const CACHE_NAME="health-tracker-v6";
+const CACHE_NAME="health-tracker-v7";
 const APP_SHELL=[
   "./","./index.html","./style.css?v=6","./training.css","./notes.css",
-  "./exercise-details.css","./enhancements.css?v=6","./app.js","./notes.js",
+  "./exercise-details.css","./enhancements.css?v=7","./app.js","./notes.js",
   "./exercise-details.js","./enhancements.js","./manifest.webmanifest","./icon.svg"
 ];
 
