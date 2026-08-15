@@ -546,7 +546,9 @@ function startGuidedWorkout(planKey){
     if(session.done){
       session.done=false;session.completedAt="";session.durationMinutes="";session.day="";
       session.exercises=session.exercises.map(()=>false);
-      enhancements.weeks[currentWeek-1].logs[planKey].forEach(log=>log.sets.forEach(set=>{set.done=false;}));
+      enhancements.weeks[currentWeek-1].logs[planKey].forEach(log=>{
+        log.skippedReason="";log.sets.forEach(set=>{set.done=false;});
+      });
     }
     const firstIncomplete=session.exercises.findIndex(done=>!done);
     const now=new Date().toISOString();
