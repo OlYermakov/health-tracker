@@ -48,6 +48,33 @@ const WEEKLY_ACTIVITY_TARGET = 2;
 const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
 let currentPlan = "A";
+const MOBILE_APP_QUERY = "(max-width: 720px)";
+const APP_SCREEN_HASHES = {today:"#today",week:"#tracker",training:"#training",progress:"#progress",more:"#more"};
+
+function mobileAppEnabled(){return window.matchMedia(MOBILE_APP_QUERY).matches;}
+function appScreenFromHash(hash=location.hash){
+  if(hash==="#tracker")return "week";
+  if(hash==="#training"||hash==="#trainingHistory")return "training";
+  if(hash==="#progress")return "progress";
+  if(hash==="#more")return "more";
+  return "today";
+}
+function navigateToAppScreen(screen,{updateHistory=false,scroll=true}={}){
+  const selected=APP_SCREEN_HASHES[screen]?screen:"today";
+  document.querySelectorAll("[data-mobile-screen]").forEach(element=>element.classList.toggle("is-active",element.dataset.mobileScreen===selected));
+  document.querySelectorAll("[data-app-screen]").forEach(link=>{
+    if(link.dataset.appScreen===selected)link.setAttribute("aria-current","page");
+    else link.removeAttribute("aria-current");
+  });
+  if(!mobileAppEnabled()){
+    if(scroll)document.querySelector(APP_SCREEN_HASHES[selected])?.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+  if(updateHistory&&location.hash!==APP_SCREEN_HASHES[selected])history.pushState({screen:selected},"",APP_SCREEN_HASHES[selected]);
+  if(scroll)window.scrollTo({top:0,behavior:"auto"});
+  if(selected==="progress")requestAnimationFrame(drawCharts);
+  if(selected==="week")requestAnimationFrame(()=>document.querySelectorAll(".day-note").forEach(autoSizeNote));
+}
 
 function readStoreValue(key){
   try{
@@ -429,3 +456,17 @@ document.getElementById("weekSelect").addEventListener("change",e=>{currentWeek=
   input.addEventListener("blur",event=>{if(validateWeightInput(event.target))renderAll();});
 });
 window.addEventListener("resize",()=>requestAnimationFrame(drawCharts));
+
+document.querySelector(".section-nav")?.addEventListener("click",event=>{
+  const link=event.target.closest("[data-app-screen]");
+  if(!link||!mobileAppEnabled())return;
+  event.preventDefault();
+  navigateToAppScreen(link.dataset.appScreen,{updateHistory:true});
+});
+window.addEventListener("popstate",()=>{if(mobileAppEnabled())navigateToAppScreen(appScreenFromHash(),{scroll:true});});
+window.addEventListener("hashchange",()=>{if(mobileAppEnabled())navigateToAppScreen(appScreenFromHash(),{scroll:true});});
+const mobileAppMedia=window.matchMedia(MOBILE_APP_QUERY);
+const syncAppScreenMode=()=>navigateToAppScreen(mobileAppEnabled()?appScreenFromHash():"today",{scroll:false});
+if(typeof mobileAppMedia.addEventListener==="function")mobileAppMedia.addEventListener("change",syncAppScreenMode);
+else if(typeof mobileAppMedia.addListener==="function")mobileAppMedia.addListener(syncAppScreenMode);
+syncAppScreenMode();
