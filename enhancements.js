@@ -525,9 +525,6 @@ document.getElementById("exportBackup").addEventListener("click",exportBackup);
 document.getElementById("importBackup").addEventListener("click",()=>document.getElementById("backupFile").click());
 document.getElementById("backupFile").addEventListener("change",event=>{const [file]=event.target.files;if(file)importBackup(file);event.target.value="";});
 document.getElementById("guidedWorkoutDialog").addEventListener("close",()=>document.body.classList.remove("guided-open"));
-document.querySelector(".data-menu").addEventListener("toggle",event=>{
-  event.currentTarget.closest(".hero").style.overflow=event.currentTarget.open?"visible":"hidden";
-});
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 
