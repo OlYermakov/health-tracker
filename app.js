@@ -56,11 +56,11 @@ function readUnifiedStore(){
 
 function writeUnifiedSection(section,value){
   const current=readUnifiedStore()||{};
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:3,[section]:value}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:4,[section]:value}));
 }
 
 function blankSession(planKey){
-  return {day:"", done:false, exercises:WORKOUT_PLANS[planKey].exercises.map(()=>false)};
+  return {day:"",done:false,completedAt:"",durationMinutes:"",exercises:WORKOUT_PLANS[planKey].exercises.map(()=>false)};
 }
 function blankWeek(){
   return {
@@ -76,6 +76,8 @@ function normalizeSession(oldSession, planKey){
   const clean=blankSession(planKey);
   clean.day=oldSession?.day ?? "";
   clean.done=Boolean(oldSession?.done);
+  clean.completedAt=typeof oldSession?.completedAt==="string"?oldSession.completedAt:"";
+  clean.durationMinutes=oldSession?.durationMinutes===null||oldSession?.durationMinutes===undefined?"":String(oldSession.durationMinutes);
   clean.exercises=WORKOUT_PLANS[planKey].exercises.map((_,i)=>Boolean(oldSession?.exercises?.[i]));
   return clean;
 }
@@ -133,7 +135,7 @@ function loadNotes(){
 const dayNotes=loadNotes();
 
 function migrateUnifiedStore(){
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:3,tracker:state,notes:dayNotes,enhancements}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:4,tracker:state,notes:dayNotes,enhancements}));
 }
 function persist(){writeUnifiedSection("tracker",state);}
 function save(){ persist(); renderAll(); }
@@ -221,7 +223,7 @@ function renderRows(){
   requestAnimationFrame(()=>document.querySelectorAll(".day-note").forEach(autoSizeNote));
 }
 function checkHTML(i,key,on){
-  const labels={breakfast:"білковий сніданок",vegetables:"овочі",water:"вода",activity:"активність"};
+  const labels={breakfast:"білковий сніданок",vegetables:"овочі",water:"вода",activity:"активний день"};
   const action=on?"Виконано":"Не виконано";
   return `<button class="check ${on?'on':''}" type="button" onclick="toggleCheck(${i},'${key}')" aria-pressed="${on}" aria-label="${days[i].name}: ${labels[key]}. ${action}">✓</button>`;
 }
@@ -292,11 +294,13 @@ function renderTraining(){
       </div>
     </article>`).join("");
   const actionText=session.done?"Тренування зараховано ✓":"Зарахувати тренування";
+  const guidedAction=typeof guidedWorkoutButtonLabel==="function"?guidedWorkoutButtonLabel(currentPlan):"▶ Почати тренування";
   document.getElementById("workoutPlan").innerHTML=`
     <div class="plan-toolbar">
       <div>
         <div class="plan-kicker">${plan.title} · ${plan.subtitle}</div>
         <h3>${plan.goal}</h3>
+        <button class="start-workout" type="button" onclick="startGuidedWorkout('${currentPlan}')">${guidedAction}</button>
       </div>
       <div class="plan-progress" aria-label="Прогрес вправ">
         <div><span>${doneExercises} / ${plan.exercises.length} вправ</span><b>${pct}%</b></div>
@@ -332,6 +336,7 @@ function closeExerciseImage(){document.getElementById("exerciseImageDialog")?.cl
 function toggleExercise(planKey,index){
   const session=state.weeks[currentWeek-1].training[planKey];
   session.exercises[index]=!session.exercises[index];
+  if(typeof setAllExerciseSetsDone==="function")setAllExerciseSetsDone(currentWeek-1,planKey,index,session.exercises[index]);
   persist();renderTraining();
 }
 function setSessionDay(planKey,value){
@@ -363,6 +368,13 @@ function toggleSessionDone(planKey){
     }
   }
   session.done=!session.done;
+  if(session.done){
+    session.completedAt=new Date().toISOString();
+    if(typeof consumeActiveWorkoutDuration==="function")session.durationMinutes=consumeActiveWorkoutDuration(planKey);
+  }else{
+    session.completedAt="";
+    session.durationMinutes="";
+  }
   save();
 }
 

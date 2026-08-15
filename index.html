@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=10" />
-<link rel="stylesheet" href="training.css?v=10" />
-<link rel="stylesheet" href="notes.css?v=10" />
-<link rel="stylesheet" href="exercise-details.css?v=10" />
-<link rel="stylesheet" href="enhancements.css?v=10" />
+<link rel="stylesheet" href="style.css?v=11" />
+<link rel="stylesheet" href="training.css?v=11" />
+<link rel="stylesheet" href="notes.css?v=11" />
+<link rel="stylesheet" href="exercise-details.css?v=11" />
+<link rel="stylesheet" href="enhancements.css?v=11" />
 </head>
 <body>
 <div class="shell">
@@ -24,11 +24,15 @@
       <h1>12-тижневий health tracker</h1>
       <div class="sub">Звички, активність, вага, самопочуття і дві короткі програми для залу — в одному місці. Дані зберігаються локально у твоєму браузері.</div>
     </div>
-    <div class="hero-tools" aria-label="Керування даними">
-      <button class="btn" id="exportBackup" type="button">Зберегти копію</button>
-      <button class="btn" id="importBackup" type="button">Відновити</button>
-      <input class="visually-hidden" id="backupFile" type="file" accept="application/json,.json" />
-    </div>
+    <details class="data-menu">
+      <summary aria-label="Керування даними">⋯</summary>
+      <div class="data-menu-popover">
+        <strong>Дані застосунку</strong>
+        <button class="btn" id="exportBackup" type="button">Зберегти копію</button>
+        <button class="btn" id="importBackup" type="button">Відновити з файла</button>
+      </div>
+    </details>
+    <input class="visually-hidden" id="backupFile" type="file" accept="application/json,.json" />
   </section>
 
   <nav class="section-nav glass" aria-label="Навігація">
@@ -38,6 +42,14 @@
   </nav>
 
   <main id="tracker">
+    <section class="today-panel glass" id="todayPanel" aria-labelledby="todayTitle">
+      <div class="today-heading">
+        <div><div class="eyebrow">Швидкий доступ</div><h2 id="todayTitle">Сьогодні</h2></div>
+        <div class="today-date" id="todayDate"></div>
+      </div>
+      <div id="todayContent"></div>
+    </section>
+
     <section class="program-settings glass" aria-labelledby="programSettingsTitle">
       <div>
         <div class="eyebrow" id="programSettingsTitle">Календар програми</div>
@@ -74,6 +86,10 @@
             <label for="mood">Настрій 1–10</label>
             <select id="mood"></select>
           </div>
+          <div class="field">
+            <label for="waistCircumference">Обхват талії, см</label>
+            <input id="waistCircumference" type="number" inputmode="decimal" min="40" max="200" step="0.5" placeholder="Напр. 102" />
+          </div>
         </div>
 
         <p class="mobile-table-hint">Проведи по таблиці вбік, щоб побачити всі звички та нотатки.</p>
@@ -85,7 +101,7 @@
                 <th>Білковий сніданок</th>
                 <th>Овочі</th>
                 <th>Вода</th>
-                <th>Активність</th>
+                <th>Активний день</th>
                 <th>Нотатка</th>
               </tr>
             </thead>
@@ -165,6 +181,14 @@
     <div id="workoutPlan" role="tabpanel"></div>
   </section>
 
+  <section class="history-section glass" id="trainingHistory" aria-labelledby="historyTitle">
+    <div class="history-heading">
+      <div><div class="eyebrow">Журнал</div><h2 id="historyTitle">Історія тренувань</h2></div>
+      <span id="historyCount">0 записів</span>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </section>
+
   <section class="layout" id="progress">
     <div class="panel glass">
       <h2>Динаміка ваги</h2>
@@ -187,6 +211,7 @@
       <div class="summary-card"><span>Тренувань A/B</span><strong id="summaryWorkouts">0</strong></div>
       <div class="summary-card"><span>Середнє виконання</span><strong id="summaryCompletion">0%</strong></div>
       <div class="summary-card" title="Показник з’явиться після внесення ваги наприкінці 12-го тижня"><span>Фінальна зміна ваги</span><strong id="summaryWeight">—</strong></div>
+      <div class="summary-card"><span>Зміна талії</span><strong id="summaryWaist">—</strong></div>
       <div class="summary-card"><span>Остання копія</span><strong id="summaryBackup">Немає</strong></div>
     </div>
   </section>
@@ -208,8 +233,17 @@
   <button class="exercise-image-close" type="button" onclick="closeExerciseImage()" aria-label="Закрити">×</button>
   <figure><img src="" alt=""><figcaption></figcaption></figure>
 </dialog>
-<script src="app.js?v=10"></script>
-<script src="exercise-details.js?v=10"></script>
-<script src="enhancements.js?v=10"></script>
+<dialog class="guided-workout-dialog" id="guidedWorkoutDialog">
+  <div class="guided-shell">
+    <header class="guided-header">
+      <div><span id="guidedPlanLabel">Тренування A</span><strong id="guidedProgress">1 / 7</strong></div>
+      <button type="button" onclick="closeGuidedWorkout()" aria-label="Закрити тренування">×</button>
+    </header>
+    <div id="guidedWorkoutContent"></div>
+  </div>
+</dialog>
+<script src="app.js?v=11"></script>
+<script src="exercise-details.js?v=11"></script>
+<script src="enhancements.js?v=11"></script>
 </body>
 </html>
