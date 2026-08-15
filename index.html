@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=19" />
-<link rel="stylesheet" href="training.css?v=19" />
-<link rel="stylesheet" href="notes.css?v=19" />
-<link rel="stylesheet" href="exercise-details.css?v=19" />
-<link rel="stylesheet" href="enhancements.css?v=19" />
+<link rel="stylesheet" href="style.css?v=20" />
+<link rel="stylesheet" href="training.css?v=20" />
+<link rel="stylesheet" href="notes.css?v=20" />
+<link rel="stylesheet" href="exercise-details.css?v=20" />
+<link rel="stylesheet" href="enhancements.css?v=20" />
 </head>
 <body>
 <div class="shell">
@@ -99,6 +99,7 @@
                 <th>Овочі</th>
                 <th>Вода</th>
                 <th>Активний день</th>
+                <th>Самопочуття</th>
                 <th>Нотатка</th>
               </tr>
             </thead>
@@ -138,13 +139,13 @@
       <div>
         <div class="eyebrow">Контроль навантаження</div>
         <h2 id="wellbeingTitle">Самопочуття цього тижня</h2>
-        <p>Заповнюй раз на тиждень. Це допоможе помітити зв’язок між навантаженням, сном і реакцією колін.</p>
+        <p>Показники автоматично розраховуються зі щоденних записів. Чим більше заповнених днів, тим точніший підсумок.</p>
       </div>
       <div class="wellbeing-grid">
-        <div class="field"><label for="sleepHours">Сон, год/ніч</label><input id="sleepHours" type="number" min="0" max="14" step="0.5" inputmode="decimal" placeholder="7.0" /></div>
-        <div class="field"><label for="energyLevel">Самопочуття / енергія 1–10</label><select id="energyLevel"></select></div>
-        <div class="field"><label for="leftKneePain">Ліве коліно 0–10</label><select id="leftKneePain"></select></div>
-        <div class="field"><label for="rightKneePain">Праве коліно 0–10</label><select id="rightKneePain"></select></div>
+        <div class="wellbeing-summary-card"><span>Середній сон</span><strong id="weeklySleepAverage">—</strong><small id="weeklySleepCoverage">0 із 7 днів</small></div>
+        <div class="wellbeing-summary-card"><span>Середня енергія</span><strong id="weeklyEnergyAverage">—</strong><small id="weeklyEnergyCoverage">0 із 7 днів</small></div>
+        <div class="wellbeing-summary-card"><span>Реакція колін</span><strong id="weeklyKneeAverage">—</strong><small id="weeklyKneeMaximum">Максимум: —</small></div>
+        <div class="wellbeing-summary-card"><span>Повнота даних</span><strong id="weeklyWellbeingCoverage">0%</strong><small>усі 4 показники за день</small></div>
       </div>
       <div class="pain-warning" id="painWarning" hidden></div>
     </section>
@@ -256,8 +257,8 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="app.js?v=19"></script>
-<script src="exercise-details.js?v=19"></script>
-<script src="enhancements.js?v=19"></script>
+<script src="app.js?v=20"></script>
+<script src="exercise-details.js?v=20"></script>
+<script src="enhancements.js?v=20"></script>
 </body>
 </html>
