@@ -33,6 +33,17 @@ a{color:inherit}
 .exercise-number{font-size:12px;color:var(--muted);font-weight:900;letter-spacing:.08em;padding-top:10px}
 .exercise-main h3{margin:4px 0 6px;font-size:16px}
 .exercise-main p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.exercise-overview{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:start}
+.exercise-visual{position:relative;width:112px;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;background:#061127;cursor:zoom-in}
+.exercise-visual img{display:block;width:100%;height:100%;object-fit:cover}
+.exercise-visual span{position:absolute;right:7px;bottom:7px;width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:rgba(3,10,25,.78);color:white;font-size:17px}
+.exercise-visual:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.exercise-image-dialog{width:min(92vw,720px);padding:0;border:1px solid rgba(121,231,255,.28);border-radius:22px;background:#071127;color:var(--text);box-shadow:0 24px 90px rgba(0,0,0,.65)}
+.exercise-image-dialog::backdrop{background:rgba(1,5,16,.82);backdrop-filter:blur(5px)}
+.exercise-image-dialog figure{margin:0}
+.exercise-image-dialog img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover}
+.exercise-image-dialog figcaption{padding:14px 56px 16px 18px;font-weight:900;font-size:16px}
+.exercise-image-close{position:absolute;right:12px;top:12px;width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(3,10,25,.82);color:white;font-size:24px;cursor:pointer}
 .exercise-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .exercise-meta span{color:var(--cyan);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .exercise-meta strong{font-size:12px;color:var(--text);padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
@@ -45,4 +56,4 @@ a{color:inherit}
 .session-note{color:var(--muted);font-size:12px;line-height:1.55;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
 .breakfast-grid{grid-template-columns:repeat(2,1fr)}
 @media(max-width:900px){.training-head{display:grid}.training-week-card{width:100%;grid-template-columns:auto auto;align-items:center}.training-week-card small{grid-column:1/-1}.plan-toolbar{grid-template-columns:1fr}.session-footer{grid-template-columns:1fr 1fr}.session-note{grid-column:1/-1}}
-@media(max-width:620px){.section-nav{width:100%;justify-content:space-between}.section-nav a{flex:1;text-align:center;padding:9px 6px}.training-section{padding:16px}.training-tabs{grid-template-columns:1fr 1fr}.exercise-card{grid-template-columns:38px 1fr;gap:10px}.exercise-number{display:none}.session-footer{grid-template-columns:1fr}.breakfast-grid{grid-template-columns:1fr}.training-week-card{grid-template-columns:1fr auto}}
+@media(max-width:620px){.section-nav{width:100%;justify-content:space-between}.section-nav a{flex:1;text-align:center;padding:9px 6px}.training-section{padding:16px}.training-tabs{grid-template-columns:1fr 1fr}.exercise-card{grid-template-columns:38px minmax(0,1fr);gap:10px}.exercise-number{display:none}.exercise-overview{grid-template-columns:86px minmax(0,1fr);gap:10px}.exercise-visual{width:86px}.session-footer{grid-template-columns:1fr}.breakfast-grid{grid-template-columns:1fr}.training-week-card{grid-template-columns:1fr auto}}
