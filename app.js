@@ -42,21 +42,33 @@ const WORKOUT_PLANS = {
 const LEGACY_TRACKER_KEY = "healthGlassTracker_v1";
 const LEGACY_NOTES_KEY = "healthGlassDayNotes_v1";
 const UNIFIED_KEY = "healthTrackerUnified_v3";
+const RECOVERY_KEY = "healthTrackerRecovery_v1";
+const UNIFIED_STORE_VERSION = 7;
 const WEEKLY_ACTIVITY_TARGET = 2;
 const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
 let currentPlan = "A";
 
-function readUnifiedStore(){
+function readStoreValue(key){
   try{
-    const parsed=JSON.parse(localStorage.getItem(UNIFIED_KEY)||"null");
+    const parsed=JSON.parse(localStorage.getItem(key)||"null");
     return parsed&&typeof parsed==="object"?parsed:null;
   }catch(e){return null;}
 }
 
+function readUnifiedStore(){
+  return readStoreValue(UNIFIED_KEY)||readStoreValue(RECOVERY_KEY);
+}
+
+function writeUnifiedStore(value){
+  const serialized=JSON.stringify({...value,version:UNIFIED_STORE_VERSION});
+  localStorage.setItem(UNIFIED_KEY,serialized);
+  try{localStorage.setItem(RECOVERY_KEY,serialized);}catch(e){}
+}
+
 function writeUnifiedSection(section,value){
   const current=readUnifiedStore()||{};
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:6,[section]:value}));
+  writeUnifiedStore({...current,[section]:value});
 }
 
 function blankSession(planKey){
@@ -135,7 +147,7 @@ function loadNotes(){
 let dayNotes=loadNotes();
 
 function migrateUnifiedStore(){
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:6,tracker:state,notes:dayNotes,enhancements}));
+  writeUnifiedStore({tracker:state,notes:dayNotes,enhancements});
 }
 function persist(){writeUnifiedSection("tracker",state);}
 function save(){ persist(); renderAll(); }
