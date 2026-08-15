@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=14" />
-<link rel="stylesheet" href="training.css?v=14" />
-<link rel="stylesheet" href="notes.css?v=14" />
-<link rel="stylesheet" href="exercise-details.css?v=14" />
-<link rel="stylesheet" href="enhancements.css?v=14" />
+<link rel="stylesheet" href="style.css?v=15" />
+<link rel="stylesheet" href="training.css?v=15" />
+<link rel="stylesheet" href="notes.css?v=15" />
+<link rel="stylesheet" href="exercise-details.css?v=15" />
+<link rel="stylesheet" href="enhancements.css?v=15" />
 </head>
 <body>
 <div class="shell">
@@ -84,10 +84,6 @@
             <input id="endWeight" type="number" inputmode="decimal" min="40" max="250" step="0.1" placeholder="93.8" />
           </div>
           <div class="field">
-            <label for="mood">Настрій 1–10</label>
-            <select id="mood"></select>
-          </div>
-          <div class="field">
             <label for="waistCircumference">Обхват талії, см</label>
             <input id="waistCircumference" type="number" inputmode="decimal" min="40" max="200" step="0.5" placeholder="Напр. 102" />
           </div>
@@ -146,8 +142,7 @@
       </div>
       <div class="wellbeing-grid">
         <div class="field"><label for="sleepHours">Сон, год/ніч</label><input id="sleepHours" type="number" min="0" max="14" step="0.5" inputmode="decimal" placeholder="7.0" /></div>
-        <div class="field"><label for="energyLevel">Фізична енергія 1–10</label><select id="energyLevel"></select></div>
-        <div class="field"><label for="activityMinutes">Активність, хв/тиждень</label><input id="activityMinutes" type="number" min="0" max="2000" step="5" inputmode="numeric" placeholder="90" /></div>
+        <div class="field"><label for="energyLevel">Самопочуття / енергія 1–10</label><select id="energyLevel"></select></div>
         <div class="field"><label for="leftKneePain">Ліве коліно 0–10</label><select id="leftKneePain"></select></div>
         <div class="field"><label for="rightKneePain">Праве коліно 0–10</label><select id="rightKneePain"></select></div>
       </div>
@@ -243,8 +238,8 @@
     <div id="guidedWorkoutContent"></div>
   </div>
 </dialog>
-<script src="app.js?v=14"></script>
-<script src="exercise-details.js?v=14"></script>
-<script src="enhancements.js?v=14"></script>
+<script src="app.js?v=15"></script>
+<script src="exercise-details.js?v=15"></script>
+<script src="enhancements.js?v=15"></script>
 </body>
 </html>
