@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=15" />
-<link rel="stylesheet" href="training.css?v=15" />
-<link rel="stylesheet" href="notes.css?v=15" />
-<link rel="stylesheet" href="exercise-details.css?v=15" />
-<link rel="stylesheet" href="enhancements.css?v=15" />
+<link rel="stylesheet" href="style.css?v=16" />
+<link rel="stylesheet" href="training.css?v=16" />
+<link rel="stylesheet" href="notes.css?v=16" />
+<link rel="stylesheet" href="exercise-details.css?v=16" />
+<link rel="stylesheet" href="enhancements.css?v=16" />
 </head>
 <body>
 <div class="shell">
@@ -210,6 +210,11 @@
       <div class="summary-card"><span>Зміна талії</span><strong id="summaryWaist">—</strong></div>
       <div class="summary-card"><span>Остання копія</span><strong id="summaryBackup">Немає</strong></div>
     </div>
+    <div class="program-lifecycle">
+      <div><strong>Керування програмою</strong><span id="programArchiveStatus">Поточна програма активна.</span></div>
+      <button type="button" onclick="archiveCurrentProgram()">Архівувати й почати нову</button>
+    </div>
+    <div id="programArchiveList"></div>
   </section>
 
   <section class="panel glass" style="margin-top:18px">
@@ -233,13 +238,13 @@
   <div class="guided-shell">
     <header class="guided-header">
       <div><span id="guidedPlanLabel">Тренування A</span><strong id="guidedProgress">1 / 7</strong></div>
-      <button type="button" onclick="closeGuidedWorkout()" aria-label="Закрити тренування">×</button>
+      <div class="guided-header-actions"><button class="guided-pause-button" id="guidedPauseButton" type="button" onclick="toggleGuidedPause()" aria-pressed="false">Ⅱ Пауза</button><button type="button" onclick="closeGuidedWorkout()" aria-label="Закрити тренування">×</button></div>
     </header>
     <div id="guidedWorkoutContent"></div>
   </div>
 </dialog>
-<script src="app.js?v=15"></script>
-<script src="exercise-details.js?v=15"></script>
-<script src="enhancements.js?v=15"></script>
+<script src="app.js?v=16"></script>
+<script src="exercise-details.js?v=16"></script>
+<script src="enhancements.js?v=16"></script>
 </body>
 </html>

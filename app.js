@@ -56,7 +56,7 @@ function readUnifiedStore(){
 
 function writeUnifiedSection(section,value){
   const current=readUnifiedStore()||{};
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:4,[section]:value}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:5,[section]:value}));
 }
 
 function blankSession(planKey){
@@ -132,19 +132,27 @@ function loadNotes(){
     return normalizeNotes(JSON.parse(localStorage.getItem(LEGACY_NOTES_KEY)||"null"));
   }catch(e){return emptyNotes();}
 }
-const dayNotes=loadNotes();
+let dayNotes=loadNotes();
 
 function migrateUnifiedStore(){
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:4,tracker:state,notes:dayNotes,enhancements}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:5,tracker:state,notes:dayNotes,enhancements}));
 }
 function persist(){writeUnifiedSection("tracker",state);}
 function save(){ persist(); renderAll(); }
 function completedSessionOnDay(w,dayIndex){
+  const weekIndex=state.weeks.indexOf(w);
+  if(weekIndex>=0&&typeof completedTrainingRecordsForWeek==="function"){
+    return completedTrainingRecordsForWeek(weekIndex).some(record=>Number(record.day)===Number(dayIndex));
+  }
   return [w.training.A,w.training.B].some(session=>session.done&&Number(session.day)===dayIndex);
 }
 function dayIsActive(w,dayIndex){return Boolean(w.days[dayIndex].activity)||completedSessionOnDay(w,dayIndex);}
 function activityCount(w){return w.days.reduce((total,_,index)=>total+Number(dayIsActive(w,index)),0);}
-function completedGymCount(w){return Number(w.training.A.done)+Number(w.training.B.done);}
+function completedGymCount(w){
+  const weekIndex=state.weeks.indexOf(w);
+  if(weekIndex>=0&&typeof completedTrainingRecordsForWeek==="function")return completedTrainingRecordsForWeek(weekIndex).length;
+  return Number(w.training.A.done)+Number(w.training.B.done);
+}
 function completionOf(w){
   let done=0;
   w.days.forEach(d=>["breakfast","vegetables","water"].forEach(k=>{if(d[k])done++;}));
@@ -263,12 +271,15 @@ function renderTraining(){
   const plan=WORKOUT_PLANS[currentPlan];
   const session=w.training[currentPlan];
   document.getElementById("trainingWeek").textContent=currentWeek;
-  document.getElementById("trainingWeekStatus").textContent=`${completedGymCount(w)} / 2`;
+  document.getElementById("trainingWeekStatus").textContent=`${Math.min(completedGymCount(w),2)} / 2`;
   document.getElementById("tabA").classList.toggle("active",currentPlan==="A");
   document.getElementById("tabB").classList.toggle("active",currentPlan==="B");
   const doneExercises=session.exercises.filter(Boolean).length;
   const pct=Math.round(doneExercises/plan.exercises.length*100);
-  const dayOptions=days.map((d,i)=>`<option value="${i}" ${String(session.day)===String(i)?'selected':''}>${d.name}</option>`).join("");
+  const dayOptions=days.map((d,i)=>{
+    const occupied=typeof trainingDayIsTaken==="function"&&trainingDayIsTaken(currentWeek-1,i,currentPlan);
+    return `<option value="${i}" ${String(session.day)===String(i)?'selected':''} ${occupied&&String(session.day)!==String(i)?"disabled":""}>${d.name}${occupied&&String(session.day)!==String(i)?" · вже є тренування":""}</option>`;
+  }).join("");
   const exercises=plan.exercises.map((ex,i)=>`
     <article class="exercise-card ${session.exercises[i]?'done':''}">
       <span class="exercise-check ${session.exercises[i]?'on':''}" role="img" aria-label="${session.exercises[i]?'Усі підходи виконано':'Вправа ще не завершена'}">✓</span>
@@ -331,8 +342,9 @@ function setSessionDay(planKey,value){
   const session=w.training[planKey];
   const other=planKey==="A"?"B":"A";
   const otherSession=w.training[other];
-  if(value!==""&&String(otherSession.day)===String(value)){
-    showToast(`Тренування ${other} вже заплановане на цей день. Залиши день відпочинку.`);
+  const occupied=value!==""&&((typeof trainingDayIsTaken==="function"&&trainingDayIsTaken(currentWeek-1,value,planKey))||String(otherSession.day)===String(value));
+  if(occupied){
+    showToast("На цей день уже записане тренування. Обери інший день для відновлення.");
     renderTraining();return;
   }
   session.day=value;
