@@ -1,8 +1,8 @@
-const CACHE_NAME="health-tracker-v18";
+const CACHE_NAME="health-tracker-v19";
 const APP_SHELL=[
-  "./","./index.html","./style.css?v=18","./training.css?v=18","./notes.css?v=18",
-  "./exercise-details.css?v=18","./enhancements.css?v=18","./app.js?v=18",
-  "./exercise-details.js?v=18","./enhancements.js?v=18","./manifest.webmanifest","./icon.svg",
+  "./","./index.html","./style.css?v=19","./training.css?v=19","./notes.css?v=19",
+  "./exercise-details.css?v=19","./enhancements.css?v=19","./app.js?v=19",
+  "./exercise-details.js?v=19","./enhancements.js?v=19","./manifest.webmanifest","./icon.svg",
   "./assets/exercises/stationary-bike.webp","./assets/exercises/chest-press.webp","./assets/exercises/seated-row.webp",
   "./assets/exercises/leg-curl.webp","./assets/exercises/leg-press.webp","./assets/exercises/hip-thrust.webp",
   "./assets/exercises/pallof-press.webp","./assets/exercises/elliptical.webp","./assets/exercises/lat-pulldown.webp",
@@ -22,8 +22,10 @@ self.addEventListener("activate",event=>{
 self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET"||new URL(event.request.url).origin!==self.location.origin)return;
   event.respondWith(fetch(event.request).then(response=>{
-    const copy=response.clone();
-    caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
+    if(response.ok){
+      const copy=response.clone();
+      caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
+    }
     return response;
   }).catch(()=>caches.match(event.request).then(cached=>cached||caches.match("./index.html"))));
 });
