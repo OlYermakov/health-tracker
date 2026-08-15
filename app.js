@@ -192,11 +192,6 @@ function renderWeekSelect(){
     const o=document.createElement("option");o.value=i;o.textContent=`Тиждень ${i}`;o.selected=i===currentWeek;s.appendChild(o);
   }
 }
-function renderMood(){
-  const s=document.getElementById("mood");
-  s.innerHTML='<option value="">—</option>';
-  for(let i=1;i<=10;i++){const o=document.createElement("option");o.value=i;o.textContent=i;s.appendChild(o);}
-}
 function renderRows(){
   const tbody=document.getElementById("weekRows");
   tbody.innerHTML="";
@@ -241,7 +236,6 @@ function renderFields(){
   const w=state.weeks[currentWeek-1];
   document.getElementById("startWeight").value=w.startWeight??"";
   document.getElementById("endWeight").value=w.endWeight??"";
-  document.getElementById("mood").value=w.mood??"";
 }
 function renderWeekNav(){
   const nav=document.getElementById("weekNav");nav.innerHTML="";
@@ -277,7 +271,7 @@ function renderTraining(){
   const dayOptions=days.map((d,i)=>`<option value="${i}" ${String(session.day)===String(i)?'selected':''}>${d.name}</option>`).join("");
   const exercises=plan.exercises.map((ex,i)=>`
     <article class="exercise-card ${session.exercises[i]?'done':''}">
-      <button class="exercise-check ${session.exercises[i]?'on':''}" type="button" onclick="toggleExercise('${currentPlan}',${i})" aria-label="${session.exercises[i]?'Виконано':'Позначити виконаним'}">✓</button>
+      <span class="exercise-check ${session.exercises[i]?'on':''}" role="img" aria-label="${session.exercises[i]?'Усі підходи виконано':'Вправа ще не завершена'}">✓</span>
       <div class="exercise-number">${String(i+1).padStart(2,'0')}</div>
       <div class="exercise-main">
         <div class="exercise-overview">
@@ -293,7 +287,6 @@ function renderTraining(){
         </div>
       </div>
     </article>`).join("");
-  const actionText=session.done?"Тренування зараховано ✓":"Зарахувати тренування";
   const guidedAction=typeof guidedWorkoutButtonLabel==="function"?guidedWorkoutButtonLabel(currentPlan):"▶ Почати тренування";
   document.getElementById("workoutPlan").innerHTML=`
     <div class="plan-toolbar">
@@ -315,7 +308,7 @@ function renderTraining(){
           <option value="">Обери день</option>${dayOptions}
         </select>
       </div>
-      <button class="complete-session ${session.done?'done':''}" type="button" onclick="toggleSessionDone('${currentPlan}')" ${session.day===''?'disabled':''}>${actionText}</button>
+      <div class="session-status ${session.done?'done':''}"><span>${session.done?'Завершено':'Завершення'}</span><strong>${session.done?'Тренування зараховано ✓':'У покроковому режимі'}</strong></div>
       <div class="session-note">Перші 2 тижні тримай вагу помірною: закінчуй підхід із запасом приблизно 3–4 повторення. Коли верхня межа повторів дається чисто у двох підходах і коліна спокійні — наступного разу додай найменший крок ваги.</div>
     </div>`;
   if(typeof injectExerciseTechnique==="function")injectExerciseTechnique();
@@ -333,12 +326,6 @@ function openExerciseImage(planKey,index){
   else dialog.setAttribute("open","");
 }
 function closeExerciseImage(){document.getElementById("exerciseImageDialog")?.close();}
-function toggleExercise(planKey,index){
-  const session=state.weeks[currentWeek-1].training[planKey];
-  session.exercises[index]=!session.exercises[index];
-  if(typeof setAllExerciseSetsDone==="function")setAllExerciseSetsDone(currentWeek-1,planKey,index,session.exercises[index]);
-  persist();renderTraining();
-}
 function setSessionDay(planKey,value){
   const w=state.weeks[currentWeek-1];
   const session=w.training[planKey];
@@ -351,33 +338,6 @@ function setSessionDay(planKey,value){
   session.day=value;
   save();
 }
-function toggleSessionDone(planKey){
-  const w=state.weeks[currentWeek-1];
-  const session=w.training[planKey];
-  if(session.day==="")return;
-  if(!session.done){
-    const completed=session.exercises.filter(Boolean).length;
-    if(completed<MIN_EXERCISES_TO_COMPLETE){
-      showToast(`Щоб зарахувати тренування, познач щонайменше ${MIN_EXERCISES_TO_COMPLETE} вправи.`);
-      return;
-    }
-    const other=planKey==="A"?"B":"A";
-    const otherSession=w.training[other];
-    if(otherSession.done&&String(otherSession.day)===String(session.day)){
-      showToast(`Тренування ${other} вже зараховане в цей день.`);return;
-    }
-  }
-  session.done=!session.done;
-  if(session.done){
-    session.completedAt=new Date().toISOString();
-    if(typeof consumeActiveWorkoutDuration==="function")session.durationMinutes=consumeActiveWorkoutDuration(planKey);
-  }else{
-    session.completedAt="";
-    session.durationMinutes="";
-  }
-  save();
-}
-
 function fitCanvas(c){
   const dpr=window.devicePixelRatio||1,rect=c.getBoundingClientRect();
   c.width=Math.max(1,Math.floor(rect.width*dpr));c.height=Math.max(1,Math.floor(rect.height*dpr));
@@ -438,5 +398,4 @@ document.getElementById("weekSelect").addEventListener("change",e=>{currentWeek=
   input.addEventListener("input",event=>{state.weeks[currentWeek-1][key]=event.target.value;persist();});
   input.addEventListener("blur",event=>{if(validateWeightInput(event.target))renderAll();});
 });
-document.getElementById("mood").addEventListener("change",e=>{state.weeks[currentWeek-1].mood=e.target.value;save();});
 window.addEventListener("resize",()=>requestAnimationFrame(drawCharts));

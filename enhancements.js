@@ -203,7 +203,6 @@ function renderWellbeing(){
   const week=enhancements.weeks[currentWeek-1];
   document.getElementById("sleepHours").value=week.sleep;
   document.getElementById("energyLevel").value=week.energy;
-  document.getElementById("activityMinutes").value=week.activity;
   document.getElementById("leftKneePain").value=week.painLeft;
   document.getElementById("rightKneePain").value=week.painRight;
   document.getElementById("waistCircumference").value=week.waist;
@@ -242,12 +241,6 @@ function exerciseLog(weekIndex,planKey,exerciseIndex){
 function syncExerciseCompletion(weekIndex,planKey,exerciseIndex){
   const log=exerciseLog(weekIndex,planKey,exerciseIndex);
   state.weeks[weekIndex].training[planKey].exercises[exerciseIndex]=Boolean(log?.sets?.length)&&log.sets.every(set=>set.done);
-}
-
-function setAllExerciseSetsDone(weekIndex,planKey,exerciseIndex,done){
-  const log=exerciseLog(weekIndex,planKey,exerciseIndex);
-  if(!log)return;
-  log.sets.forEach(set=>{set.done=Boolean(done);});persistEnhancements();
 }
 
 function updateExerciseSetValue(planKey,exerciseIndex,setIndex,key,value){
@@ -423,7 +416,7 @@ function renderGuidedWorkout(){
     <div class="guided-sets"><div class="guided-section-title"><strong>Підходи</strong><span>${completed} / ${plan.exercises.length} вправ завершено</span></div>${setRowsHTML(active.plan,active.index,log,true)}</div>
     <div class="guided-rest"><div><span>Відпочинок</span><strong id="restTimerDisplay">Готовий до наступного підходу</strong></div><div><button type="button" onclick="startRestTimer(60)">1:00</button><button type="button" onclick="startRestTimer(90)">1:30</button><button type="button" onclick="startRestTimer(120)">2:00</button><button class="rest-skip" type="button" onclick="skipRestTimer()">Пропустити</button></div></div>
     <div class="guided-day"><label for="guidedSessionDay">День тренування</label><select id="guidedSessionDay" onchange="setGuidedDay(this.value)">${guidedDayOptions(active.plan)}</select></div>
-    <div class="guided-reset-panel"><div><strong>Почати заново?</strong><small>Перезапуск збереже вагу, повтори та вибраний день. Повне скидання очистить усі дані цього тренування.</small></div><div class="guided-reset-buttons"><button type="button" onclick="restartGuidedWorkout(false)">↻ Перезапустити</button><button class="guided-reset-all" type="button" onclick="restartGuidedWorkout(true)">Скинути повністю</button></div></div>
+    <div class="guided-reset-panel"><div><strong>Почати заново?</strong><small>Перезапуск збереже вагу, повтори та вибраний день. Повне очищення доступне в додаткових діях.</small></div><div class="guided-reset-buttons"><button type="button" onclick="restartGuidedWorkout(false)">↻ Перезапустити</button><details class="guided-danger-menu"><summary aria-label="Додаткові дії з тренуванням">⋯</summary><div class="guided-danger-popover"><strong>Незворотна дія</strong><button class="guided-reset-all" type="button" onclick="restartGuidedWorkout(true)">Скинути повністю</button></div></details></div></div>
     <footer class="guided-actions"><button type="button" onclick="guidedNavigate(-1)" ${active.index===0?"disabled":""}>← Попередня</button>${active.index<plan.exercises.length-1?`<button class="guided-next" type="button" onclick="guidedNavigate(1)">Наступна →</button>`:`<button class="guided-finish" type="button" onclick="finishGuidedWorkout()">Завершити тренування</button>`}</footer>`;
   updateRestTimer();
 }
@@ -439,11 +432,6 @@ function guidedNavigate(delta){
 function activeWorkoutMinutes(active=enhancements.activeWorkout){
   const started=active?.startedAt?new Date(active.startedAt).getTime():NaN;
   return Number.isFinite(started)?Math.max(1,Math.round((Date.now()-started)/60000)):"";
-}
-
-function consumeActiveWorkoutDuration(planKey){
-  const active=enhancements.activeWorkout;if(!active||active.week!==currentWeek-1||active.plan!==planKey)return "";
-  const minutes=activeWorkoutMinutes(active);enhancements.activeWorkout=null;persistEnhancements();return minutes;
 }
 
 function restartGuidedWorkout(clearAll=false){
@@ -525,7 +513,7 @@ document.getElementById("programStartDate").addEventListener("change",event=>{
   if(!parseProgramDate(event.target.value))return;enhancements.startDate=event.target.value;persistEnhancements();renderAll();
 });
 
-const wellbeingBindings={sleepHours:"sleep",energyLevel:"energy",activityMinutes:"activity",leftKneePain:"painLeft",rightKneePain:"painRight"};
+const wellbeingBindings={sleepHours:"sleep",energyLevel:"energy",leftKneePain:"painLeft",rightKneePain:"painRight"};
 Object.entries(wellbeingBindings).forEach(([id,key])=>{
   document.getElementById(id).addEventListener("change",event=>{
     enhancements.weeks[currentWeek-1][key]=event.target.value;persistEnhancements();renderWellbeing();renderSummary();
@@ -548,4 +536,4 @@ document.getElementById("guidedWorkoutDialog").addEventListener("close",()=>docu
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 
-migrateUnifiedStore();renderMood();renderAll();
+migrateUnifiedStore();renderAll();
