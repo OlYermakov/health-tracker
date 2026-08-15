@@ -7,6 +7,12 @@ function localISODate(date=new Date()){
   return `${y}-${m}-${d}`;
 }
 
+function currentWeekMonday(date=new Date()){
+  const monday=new Date(date);monday.setHours(0,0,0,0);
+  monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+  return monday;
+}
+
 function prescribedSetCount(exercise){
   const match=String(exercise?.dose||"").match(/^(\d+)\s*[×x]/i);
   return match?Math.max(1,Math.min(5,Number(match[1]))):1;
@@ -31,7 +37,7 @@ function blankEnhancementWeek(){
 }
 
 function defaultEnhancements(){
-  return {version:4,startDate:localISODate(),lastBackupAt:"",activeWorkout:null,weeks:Array.from({length:12},blankEnhancementWeek)};
+  return {version:4,startDate:localISODate(currentWeekMonday()),lastBackupAt:"",activeWorkout:null,weeks:Array.from({length:12},blankEnhancementWeek)};
 }
 
 function normalizedSet(source={}){
