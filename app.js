@@ -49,14 +49,15 @@ const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
 let currentPlan = "A";
 const MOBILE_APP_QUERY = "(max-width: 720px)";
-const APP_SCREEN_HASHES = {today:"#today",week:"#tracker",training:"#training",progress:"#progress",more:"#more"};
+const APP_SCREEN_HASHES = {today:"#todayPanel",week:"#weekOverview",training:"#training",progress:"#progress",more:"#moreContent"};
 
 function mobileAppEnabled(){return window.matchMedia(MOBILE_APP_QUERY).matches;}
 function appScreenFromHash(hash=location.hash){
-  if(hash==="#tracker")return "week";
+  if(hash==="#tracker"||hash==="#weekOverview")return "week";
   if(hash==="#training"||hash==="#trainingHistory")return "training";
   if(hash==="#progress")return "progress";
-  if(hash==="#more")return "more";
+  if(hash==="#more"||hash==="#moreContent")return "more";
+  if(hash==="#today"||hash==="#todayPanel")return "today";
   return "today";
 }
 function navigateToAppScreen(screen,{updateHistory=false,scroll=true}={}){
@@ -463,10 +464,10 @@ document.querySelector(".section-nav")?.addEventListener("click",event=>{
   event.preventDefault();
   navigateToAppScreen(link.dataset.appScreen,{updateHistory:true});
 });
-window.addEventListener("popstate",()=>{if(mobileAppEnabled())navigateToAppScreen(appScreenFromHash(),{scroll:true});});
-window.addEventListener("hashchange",()=>{if(mobileAppEnabled())navigateToAppScreen(appScreenFromHash(),{scroll:true});});
+window.addEventListener("popstate",()=>navigateToAppScreen(appScreenFromHash(),{scroll:true}));
+window.addEventListener("hashchange",()=>navigateToAppScreen(appScreenFromHash(),{scroll:true}));
 const mobileAppMedia=window.matchMedia(MOBILE_APP_QUERY);
-const syncAppScreenMode=()=>navigateToAppScreen(mobileAppEnabled()?appScreenFromHash():"today",{scroll:false});
+const syncAppScreenMode=()=>navigateToAppScreen(appScreenFromHash(),{scroll:Boolean(location.hash)});
 if(typeof mobileAppMedia.addEventListener==="function")mobileAppMedia.addEventListener("change",syncAppScreenMode);
 else if(typeof mobileAppMedia.addListener==="function")mobileAppMedia.addListener(syncAppScreenMode);
 syncAppScreenMode();
