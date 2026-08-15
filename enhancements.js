@@ -1,5 +1,5 @@
 const LEGACY_ENHANCEMENTS_KEY="healthTrackerEnhancements_v2";
-const ENHANCEMENTS_VERSION=7;
+const ENHANCEMENTS_VERSION=8;
 const AUTO_PAUSE_MS=5*60*1000;
 const RESET_UNDO_MS=30*60*1000;
 const HISTORY_UNDO_MS=30*60*1000;
@@ -40,9 +40,21 @@ function blankPlanLogs(planKey){
   return WORKOUT_PLANS[planKey].exercises.map((_,index)=>blankExerciseLog(planKey,index));
 }
 
+function blankDailyWellbeing(){return {sleep:"",energy:"",painLeft:"",painRight:""};}
+
+function normalizeDailyWellbeing(source={}){
+  return {
+    sleep:source.sleep===null||source.sleep===undefined?"":String(source.sleep).slice(0,5),
+    energy:source.energy===null||source.energy===undefined?"":String(source.energy).slice(0,2),
+    painLeft:source.painLeft===null||source.painLeft===undefined?"":String(source.painLeft).slice(0,2),
+    painRight:source.painRight===null||source.painRight===undefined?"":String(source.painRight).slice(0,2)
+  };
+}
+
 function blankEnhancementWeek(){
   return {
     sleep:"",energy:"",activity:"",painLeft:"",painRight:"",waist:"",
+    dailyWellbeing:Array.from({length:7},blankDailyWellbeing),
     logs:{A:blankPlanLogs("A"),B:blankPlanLogs("B")}
   };
 }
@@ -185,6 +197,7 @@ function normalizeArchive(source){
       const sourceWeek=source.weeks?.[weekIndex]||{};
       const week=blankEnhancementWeek();
       ["sleep","energy","activity","painLeft","painRight","waist"].forEach(key=>{week[key]=String(sourceWeek[key]??"");});
+      week.dailyWellbeing=Array.from({length:7},(_,dayIndex)=>normalizeDailyWellbeing(sourceWeek.dailyWellbeing?.[dayIndex]));
       ["A","B"].forEach(planKey=>{week.logs[planKey]=WORKOUT_PLANS[planKey].exercises.map((_,index)=>normalizeExerciseLog(sourceWeek.logs?.[planKey]?.[index],planKey,index));});
       return week;
     }),
@@ -228,6 +241,7 @@ function normalizeEnhancements(parsed){
     ["sleep","energy","activity","painLeft","painRight","waist"].forEach(key=>{
       week[key]=source[key]===null||source[key]===undefined?"":String(source[key]);
     });
+    week.dailyWellbeing=Array.from({length:7},(_,dayIndex)=>normalizeDailyWellbeing(source.dailyWellbeing?.[dayIndex]));
     ["A","B"].forEach(planKey=>{
       week.logs[planKey]=WORKOUT_PLANS[planKey].exercises.map((_,exerciseIndex)=>
         normalizeExerciseLog(source.logs?.[planKey]?.[exerciseIndex],planKey,exerciseIndex));
@@ -377,10 +391,52 @@ function fillNumberSelect(id,min,max){
   for(let value=min;value<=max;value++)select.appendChild(new Option(String(value),String(value)));
 }
 
+function dailyMetricOptions(value,min,max){
+  return `<option value="">—</option>`+Array.from({length:max-min+1},(_,offset)=>{
+    const option=min+offset;return `<option value="${option}" ${String(value)===String(option)?"selected":""}>${option}</option>`;
+  }).join("");
+}
+
+function dailyWellbeingHTML(weekIndex,dayIndex){
+  const daily=enhancements.weeks?.[weekIndex]?.dailyWellbeing?.[dayIndex]||blankDailyWellbeing();
+  return `<div class="daily-wellbeing-grid">
+    <label><span>Сон, год</span><input type="number" inputmode="decimal" min="0" max="16" step="0.25" value="${escapeNote(daily.sleep)}" placeholder="7.5" aria-label="${days[dayIndex].name}: сон у годинах" oninput="updateDailyWellbeing(${weekIndex},${dayIndex},'sleep',this.value,this)"></label>
+    <label><span>Енергія</span><select aria-label="${days[dayIndex].name}: енергія від 1 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'energy',this.value)">${dailyMetricOptions(daily.energy,1,10)}</select></label>
+    <label><span>Ліве коліно</span><select aria-label="${days[dayIndex].name}: біль у лівому коліні від 0 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'painLeft',this.value)">${dailyMetricOptions(daily.painLeft,0,10)}</select></label>
+    <label><span>Праве коліно</span><select aria-label="${days[dayIndex].name}: біль у правому коліні від 0 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'painRight',this.value)">${dailyMetricOptions(daily.painRight,0,10)}</select></label>
+  </div>`;
+}
+
+function updateDailyWellbeing(weekIndex,dayIndex,key,value,element=null){
+  if(!Number.isInteger(weekIndex)||weekIndex<0||weekIndex>11||!Number.isInteger(dayIndex)||dayIndex<0||dayIndex>6||!["sleep","energy","painLeft","painRight"].includes(key))return;
+  const numeric=value===""?null:Number(value);
+  const valid=value===""||(Number.isFinite(numeric)&&(key==="sleep"?numeric>=0&&numeric<=16:key==="energy"?numeric>=1&&numeric<=10:numeric>=0&&numeric<=10));
+  element?.classList.toggle("field-error",!valid);element?.setAttribute("aria-invalid",String(!valid));
+  if(!valid){showToast(key==="sleep"?"Вкажи сон від 0 до 16 годин.":"Вкажи значення у дозволеному діапазоні.");return;}
+  enhancements.weeks[weekIndex].dailyWellbeing[dayIndex][key]=value===""?"":String(value).slice(0,key==="sleep"?5:2);
+  persistEnhancements();renderWellbeing();renderSummary();
+}
+
+function weeklyWellbeingStats(weekIndex=currentWeek-1){
+  const daily=enhancements.weeks[weekIndex].dailyWellbeing;
+  const values=key=>daily.map(day=>weightNumber(day[key])).filter(value=>value!==null);
+  const sleep=values("sleep"),energy=values("energy"),pain=[...values("painLeft"),...values("painRight")];
+  const average=list=>list.length?list.reduce((sum,value)=>sum+value,0)/list.length:null;
+  const completeDays=daily.filter(day=>["sleep","energy","painLeft","painRight"].every(key=>day[key]!=="")).length;
+  return {sleepAverage:average(sleep),sleepDays:sleep.length,energyAverage:average(energy),energyDays:energy.length,painAverage:average(pain),painMaximum:pain.length?Math.max(...pain):null,completeDays};
+}
+
+function formatSleepAverage(value){
+  if(value===null)return "—";
+  let hours=Math.floor(value),minutes=Math.round((value-hours)*60/5)*5;
+  if(minutes===60){hours+=1;minutes=0;}
+  return minutes?`${hours} год ${minutes} хв`:`${hours} год`;
+}
+
 function activeWeek(week,index){
   const extra=enhancements.weeks[index];
   return Boolean(week.startWeight||week.endWeight||week.mood||week.days.some(day=>Object.values(day).some(Boolean))||
-    ["sleep","energy","activity","painLeft","painRight","waist"].some(key=>extra[key]!=="")||
+    ["sleep","energy","activity","painLeft","painRight","waist"].some(key=>extra[key]!=="")||extra.dailyWellbeing.some(day=>Object.values(day).some(value=>value!==""))||
     completedTrainingRecordsForWeek(index).length);
 }
 
@@ -410,12 +466,16 @@ function renderSummary(){
 
 function renderWellbeing(){
   const week=enhancements.weeks[currentWeek-1];
-  document.getElementById("sleepHours").value=week.sleep;
-  document.getElementById("energyLevel").value=week.energy;
-  document.getElementById("leftKneePain").value=week.painLeft;
-  document.getElementById("rightKneePain").value=week.painRight;
   document.getElementById("waistCircumference").value=week.waist;
-  const pain=Math.max(Number(week.painLeft||0),Number(week.painRight||0));
+  const stats=weeklyWellbeingStats();
+  document.getElementById("weeklySleepAverage").textContent=formatSleepAverage(stats.sleepAverage);
+  document.getElementById("weeklySleepCoverage").textContent=`${stats.sleepDays} із 7 днів`;
+  document.getElementById("weeklyEnergyAverage").textContent=stats.energyAverage===null?"—":`${stats.energyAverage.toFixed(1)} / 10`;
+  document.getElementById("weeklyEnergyCoverage").textContent=`${stats.energyDays} із 7 днів`;
+  document.getElementById("weeklyKneeAverage").textContent=stats.painAverage===null?"—":`${stats.painAverage.toFixed(1)} / 10`;
+  document.getElementById("weeklyKneeMaximum").textContent=`Максимум: ${stats.painMaximum===null?"—":`${stats.painMaximum} / 10`}`;
+  document.getElementById("weeklyWellbeingCoverage").textContent=`${Math.round(stats.completeDays/7*100)}%`;
+  const pain=stats.painMaximum??0;
   const warning=document.getElementById("painWarning");
   warning.hidden=pain<4;
   warning.textContent=pain>=7?
@@ -1192,20 +1252,11 @@ async function importBackup(file){
   }catch(e){showToast("Цей файл не є коректною резервною копією трекера.");}
 }
 
-fillNumberSelect("energyLevel",1,10);fillNumberSelect("leftKneePain",0,10);fillNumberSelect("rightKneePain",0,10);
-
 document.getElementById("programStartDate").addEventListener("change",event=>{
   const original=event.target.value,selected=parseProgramDate(original),normalized=normalizeProgramStartValue(original);
   if(!selected||!normalized){event.target.value=enhancements.startDate;showToast("Обери коректну дату початку програми.");return;}
   enhancements.startDate=normalized;recalculateCurrentPerformedDates();persistEnhancements();renderAll();
   if(normalized!==original)showToast("Початок тижня автоматично перенесено на понеділок.");
-});
-
-const wellbeingBindings={sleepHours:"sleep",energyLevel:"energy",leftKneePain:"painLeft",rightKneePain:"painRight"};
-Object.entries(wellbeingBindings).forEach(([id,key])=>{
-  document.getElementById(id).addEventListener("change",event=>{
-    enhancements.weeks[currentWeek-1][key]=event.target.value;persistEnhancements();renderWellbeing();renderSummary();
-  });
 });
 
 document.getElementById("waistCircumference").addEventListener("input",event=>{
