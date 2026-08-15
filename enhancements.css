@@ -103,11 +103,15 @@
     background:rgba(6,15,25,.93);box-shadow:0 -14px 40px rgba(0,0,0,.34);
     backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)
   }
-  .section-nav a{min-width:0;min-height:54px;padding:5px 2px;display:grid;place-items:center;align-content:center;gap:2px;border-radius:13px;font-size:10px;line-height:1.1;text-align:center}
+  .section-nav a{position:relative;min-width:0;min-height:58px;padding:5px 2px 7px;display:grid;place-items:center;align-content:center;gap:3px;border-radius:14px;font-size:10px;line-height:1.1;text-align:center;transition:color .18s ease,background .18s ease,transform .18s ease}
   .section-nav a:hover{background:transparent}
-  .section-nav a[aria-current="page"]{color:var(--text);background:linear-gradient(135deg,rgba(121,231,255,.17),rgba(183,156,255,.12))}
-  .section-nav-icon{display:block;height:21px;color:var(--muted);font-size:19px;font-weight:900;line-height:20px;letter-spacing:-2px}
-  .section-nav a[aria-current="page"] .section-nav-icon{color:var(--cyan)}
+  .section-nav a[aria-current="page"]{color:var(--text);background:linear-gradient(135deg,rgba(121,231,255,.18),rgba(183,156,255,.13))}
+  .section-nav a[aria-current="page"]::after{content:"";position:absolute;left:50%;bottom:3px;width:18px;height:2px;transform:translateX(-50%);border-radius:999px;background:linear-gradient(90deg,var(--cyan),var(--violet));box-shadow:0 0 9px rgba(121,231,255,.5)}
+  .section-nav-icon{width:28px;height:24px;display:grid;place-items:center;color:var(--muted);transition:color .18s ease,transform .18s ease,filter .18s ease}
+  .section-nav-icon svg{display:block;width:23px;height:23px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .section-nav-icon svg circle{fill:currentColor;stroke:none}
+  .section-nav a[aria-current="page"] .section-nav-icon{color:var(--cyan);transform:translateY(-1px);filter:drop-shadow(0 0 6px rgba(121,231,255,.35))}
+  .section-nav a:active{transform:scale(.96)}
   #tracker,#training,#progress,#more,#today{scroll-margin-top:max(10px,env(safe-area-inset-top,0px))}
   #tracker>.program-settings{display:none}
   .mobile-more-card{margin-top:12px;padding:15px;display:grid;gap:14px}
