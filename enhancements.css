@@ -1,5 +1,7 @@
 .hero-tools{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
 .shell{position:relative}
+.app-screens{display:block}.mobile-screen{display:contents}.mobile-screen-heading,.mobile-more-card{display:none}
+.section-nav-icon{display:none}
 .data-menu{position:absolute;z-index:60;top:26px;right:28px;margin:0}
 .data-menu>summary{list-style:none;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:var(--text);font-size:25px;font-weight:900;line-height:1;cursor:pointer}
 .data-menu>summary::-webkit-details-marker{display:none}
@@ -79,18 +81,46 @@
   .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:720px){
-  html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px)}
-  body{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));overflow-x:hidden}
-  .shell{width:100%;min-width:0}
+  html{scroll-padding-top:max(10px,env(safe-area-inset-top,0px))}
+  body{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) calc(86px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));overflow-x:hidden}
+  .shell{width:100%;min-width:0;padding-bottom:4px}
   .glass{border-radius:20px}
-  .hero{padding:18px;gap:15px}
-  .hero h1{font-size:clamp(28px,9vw,38px);line-height:1.04;margin-top:0}
-  .hero .sub{font-size:13px;line-height:1.5}
-  .hero>div:first-child{padding-right:54px}
-  .data-menu{top:18px;right:18px}.data-menu>summary{width:44px;height:44px}.data-menu-popover{top:50px;width:min(210px,calc(100vw - 56px))}
-  .section-nav{top:calc(env(safe-area-inset-top,0px) + 8px);margin-top:10px;padding:5px;border-radius:16px}
-  .section-nav a{min-width:0;padding:9px 4px;font-size:12px}
-  #tracker,#training,#progress{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 72px)}
+  .hero{padding:14px 16px;gap:0}
+  .hero h1{font-size:20px;line-height:1.15;margin:0}
+  .hero .sub{display:none}
+  .hero>div:first-child{padding-right:0}
+  .data-menu{display:none}
+  .app-screens{min-height:calc(100dvh - 178px)}
+  .mobile-screen{display:none;min-width:0}
+  .mobile-screen.is-active{display:block;animation:screen-in .18s ease-out}
+  .mobile-screen-heading{display:block;padding:17px 3px 1px}
+  .mobile-screen-heading h2{margin:5px 0 0;font-size:25px}
+  .section-nav{
+    position:fixed;z-index:80;inset:auto 0 0 0;width:auto;max-width:none;margin:0;
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;
+    padding:7px max(7px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left));
+    border:0;border-top:1px solid rgba(255,255,255,.12);border-radius:0;
+    background:rgba(6,15,25,.93);box-shadow:0 -14px 40px rgba(0,0,0,.34);
+    backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)
+  }
+  .section-nav a{min-width:0;min-height:54px;padding:5px 2px;display:grid;place-items:center;align-content:center;gap:2px;border-radius:13px;font-size:10px;line-height:1.1;text-align:center}
+  .section-nav a:hover{background:transparent}
+  .section-nav a[aria-current="page"]{color:var(--text);background:linear-gradient(135deg,rgba(121,231,255,.17),rgba(183,156,255,.12))}
+  .section-nav-icon{display:block;height:21px;color:var(--muted);font-size:19px;font-weight:900;line-height:20px;letter-spacing:-2px}
+  .section-nav a[aria-current="page"] .section-nav-icon{color:var(--cyan)}
+  #tracker,#training,#progress,#more,#today{scroll-margin-top:max(10px,env(safe-area-inset-top,0px))}
+  #tracker>.program-settings{display:none}
+  .mobile-more-card{margin-top:12px;padding:15px;display:grid;gap:14px}
+  .mobile-more-card h2{margin:6px 0 0;font-size:21px}
+  .mobile-program-settings{align-items:stretch;overflow:hidden}
+  .mobile-program-settings>*,.mobile-program-settings .field{width:100%;min-width:0;max-width:100%}
+  .mobile-program-settings input[type="date"]{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none}
+  .mobile-program-settings input[type="date"]::-webkit-date-and-time-value{min-width:0;text-align:left}
+  .mobile-program-settings input[type="date"]::-webkit-datetime-edit{min-width:0;padding:0}
+  .mobile-data-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .mobile-data-actions .btn{min-width:0;min-height:46px;padding:10px}
+  .breakfast-panel{margin-top:12px}
+  .toast{right:12px;left:12px;bottom:calc(76px + env(safe-area-inset-bottom));text-align:center}
   .week-jump-panel{display:none}
   .program-settings{width:100%;min-width:0;margin-top:12px;padding:15px;align-items:stretch;flex-direction:column;gap:12px;overflow:hidden}
   .program-settings>*,.program-settings .field{width:100%;min-width:0;max-width:100%;overflow:hidden}
@@ -169,6 +199,7 @@
   .session-footer{gap:10px}
   .chart{height:200px}
 }
+@keyframes screen-in{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media(max-width:430px){
   .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr}
   .week-top{grid-template-columns:1fr 1fr}
