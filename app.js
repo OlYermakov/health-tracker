@@ -43,7 +43,7 @@ const LEGACY_TRACKER_KEY = "healthGlassTracker_v1";
 const LEGACY_NOTES_KEY = "healthGlassDayNotes_v1";
 const UNIFIED_KEY = "healthTrackerUnified_v3";
 const RECOVERY_KEY = "healthTrackerRecovery_v1";
-const UNIFIED_STORE_VERSION = 7;
+const UNIFIED_STORE_VERSION = 8;
 const WEEKLY_ACTIVITY_TARGET = 2;
 const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
@@ -227,6 +227,7 @@ function renderRows(){
       <td>${checkHTML(i,"vegetables",w.days[i].vegetables)}</td>
       <td>${checkHTML(i,"water",w.days[i].water)}</td>
       <td>${checkHTML(i,"activity",dayIsActive(w,i))}</td>
+      <td class="daily-wellbeing-cell">${typeof dailyWellbeingHTML==="function"?dailyWellbeingHTML(currentWeek-1,i):""}</td>
       <td class="note-cell">
         <textarea class="day-note" rows="1" maxlength="500"
           aria-label="Нотатка: ${day.name}"
