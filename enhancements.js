@@ -498,6 +498,9 @@ function renderEnhancements(){
   const range=weekDates(currentWeek);
   document.getElementById("programStartDate").value=enhancements.startDate;
   document.getElementById("currentWeekRange").textContent=`Тиждень ${currentWeek}: ${range.long}`;
+  const mobileStart=document.getElementById("mobileProgramStartDate"),mobileRange=document.getElementById("mobileCurrentWeekRange");
+  if(mobileStart)mobileStart.value=enhancements.startDate;
+  if(mobileRange)mobileRange.textContent=`Тиждень ${currentWeek}: ${range.long}`;
   document.querySelectorAll("#weekSelect option").forEach((option,index)=>{option.textContent=`Тиждень ${index+1} · ${weekDates(index+1).short}`;});
   document.querySelectorAll("#weekNav .week-btn").forEach((button,index)=>{button.title=weekDates(index+1).long;button.setAttribute("aria-label",`Тиждень ${index+1}, ${weekDates(index+1).long}`);});
   renderWellbeing();renderToday();renderHistory();renderSummary();renderProgramArchive();updateChartSummaries();
@@ -642,7 +645,8 @@ function toggleTodayHabit(weekIndex,dayIndex,key){
 
 function openTodayWorkout(weekIndex,planKey,guided){
   currentWeek=weekIndex+1;currentPlan=planKey;renderAll();
-  document.getElementById("training")?.scrollIntoView({behavior:"smooth",block:"start"});
+  if(typeof navigateToAppScreen==="function")navigateToAppScreen("training",{updateHistory:true});
+  else document.getElementById("training")?.scrollIntoView({behavior:"smooth",block:"start"});
   if(guided)setTimeout(()=>startGuidedWorkout(planKey),250);
 }
 
@@ -824,7 +828,9 @@ function renderHistory(){
 }
 
 function openHistorySession(weekIndex,planKey){
-  currentWeek=weekIndex+1;if(planKey!=="POOL")currentPlan=planKey;renderAll();document.getElementById(planKey==="POOL"?"trainingHistory":"training")?.scrollIntoView({behavior:"smooth",block:"start"});
+  currentWeek=weekIndex+1;if(planKey!=="POOL")currentPlan=planKey;renderAll();
+  if(typeof navigateToAppScreen==="function")navigateToAppScreen("training",{updateHistory:true});
+  else document.getElementById(planKey==="POOL"?"trainingHistory":"training")?.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 function blankPoolDraft(weekIndex=currentWeek-1){
@@ -1252,12 +1258,14 @@ async function importBackup(file){
   }catch(e){showToast("Цей файл не є коректною резервною копією трекера.");}
 }
 
-document.getElementById("programStartDate").addEventListener("change",event=>{
+function updateProgramStartDate(event){
   const original=event.target.value,selected=parseProgramDate(original),normalized=normalizeProgramStartValue(original);
   if(!selected||!normalized){event.target.value=enhancements.startDate;showToast("Обери коректну дату початку програми.");return;}
   enhancements.startDate=normalized;recalculateCurrentPerformedDates();persistEnhancements();renderAll();
   if(normalized!==original)showToast("Початок тижня автоматично перенесено на понеділок.");
-});
+}
+document.getElementById("programStartDate").addEventListener("change",updateProgramStartDate);
+document.getElementById("mobileProgramStartDate")?.addEventListener("change",updateProgramStartDate);
 
 document.getElementById("waistCircumference").addEventListener("input",event=>{
   enhancements.weeks[currentWeek-1].waist=event.target.value;persistEnhancements();
