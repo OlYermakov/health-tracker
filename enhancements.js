@@ -1,7 +1,8 @@
 const LEGACY_ENHANCEMENTS_KEY="healthTrackerEnhancements_v2";
-const ENHANCEMENTS_VERSION=6;
+const ENHANCEMENTS_VERSION=7;
 const AUTO_PAUSE_MS=5*60*1000;
 const RESET_UNDO_MS=30*60*1000;
+const HISTORY_UNDO_MS=30*60*1000;
 
 function makeId(prefix="item"){
   const random=globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
@@ -58,6 +59,7 @@ function defaultEnhancements(){
     history:[],
     archives:[],
     lastResetSnapshot:null,
+    lastHistoryChangeSnapshot:null,
     weeks:Array.from({length:12},blankEnhancementWeek)
   };
 }
@@ -155,6 +157,7 @@ function normalizeHistoryRecord(source){
     day:source.day===""?"":String(source.day??""),
     startedAt:typeof source.startedAt==="string"?source.startedAt:"",
     completedAt:typeof source.completedAt==="string"?source.completedAt:new Date().toISOString(),
+    performedDate:/^\d{4}-\d{2}-\d{2}$/.test(source.performedDate||"")?source.performedDate:"",
     durationMinutes:String(source.durationMinutes??""),
     painBeforeLeft:String(source.painBeforeLeft??"").slice(0,2),
     painBeforeRight:String(source.painBeforeRight??"").slice(0,2),
@@ -171,10 +174,10 @@ function normalizeHistoryRecord(source){
 
 function normalizeArchive(source){
   if(!source||typeof source!=="object")return null;
-  return {
+  const archive={
     id:typeof source.id==="string"?source.id:makeId("archive"),
     programId:typeof source.programId==="string"?source.programId:"",
-    startDate:typeof source.startDate==="string"?source.startDate:"",
+    startDate:normalizeProgramStartValue(source.startDate)||"",
     archivedAt:typeof source.archivedAt==="string"?source.archivedAt:new Date().toISOString(),
     tracker:normalizeState(source.tracker),
     notes:normalizeNotes(source.notes),
@@ -187,21 +190,38 @@ function normalizeArchive(source){
     }),
     history:Array.isArray(source.history)?source.history.map(normalizeHistoryRecord).filter(Boolean):[]
   };
+  archive.history.forEach(record=>{
+    if(!record.programId)record.programId=archive.programId;
+    if(!record.performedDate){
+      const date=dateForProgramDay(archive.startDate,record.weekIndex,record.day);
+      if(date)record.performedDate=localISODate(date);
+    }
+  });
+  archive.history=dedupeHistoryRecords(archive.history);
+  return archive;
 }
 
 function normalizeEnhancements(parsed){
   const clean=defaultEnhancements();
   if(!parsed||typeof parsed!=="object")return clean;
   clean.programId=typeof parsed.programId==="string"&&parsed.programId?parsed.programId:clean.programId;
-  clean.startDate=/^\d{4}-\d{2}-\d{2}$/.test(parsed.startDate||"")?parsed.startDate:clean.startDate;
+  clean.startDate=normalizeProgramStartValue(parsed.startDate)||clean.startDate;
   clean.lastBackupAt=typeof parsed.lastBackupAt==="string"?parsed.lastBackupAt:"";
   clean.timerSignal=parsed.timerSignal!==false;
   clean.activeWorkout=normalizeActiveWorkout(parsed.activeWorkout);
   clean.poolDraft=normalizePoolDraft(parsed.poolDraft);
   clean.history=Array.isArray(parsed.history)?parsed.history.map(normalizeHistoryRecord).filter(Boolean):[];
-  clean.history.forEach(record=>{if(!record.programId)record.programId=clean.programId;});
+  clean.history.forEach(record=>{
+    if(!record.programId)record.programId=clean.programId;
+    if(!record.performedDate){
+      const date=dateForProgramDay(clean.startDate,record.weekIndex,record.day);
+      if(date)record.performedDate=localISODate(date);
+    }
+  });
+  clean.history=dedupeHistoryRecords(clean.history);
   clean.archives=Array.isArray(parsed.archives)?parsed.archives.map(normalizeArchive).filter(Boolean):[];
   clean.lastResetSnapshot=parsed.lastResetSnapshot&&typeof parsed.lastResetSnapshot==="object"?cloneData(parsed.lastResetSnapshot):null;
+  clean.lastHistoryChangeSnapshot=parsed.lastHistoryChangeSnapshot&&typeof parsed.lastHistoryChangeSnapshot==="object"?cloneData(parsed.lastHistoryChangeSnapshot):null;
   clean.weeks=Array.from({length:12},(_,weekIndex)=>{
     const source=parsed.weeks?.[weekIndex]||{};
     const week=blankEnhancementWeek();
@@ -240,11 +260,15 @@ state.weeks.forEach((week,weekIndex)=>["A","B"].forEach(planKey=>{
   const session=week.training[planKey];
   if(!session.done)return;
   const legacyId=`legacy-${enhancements.programId}-${weekIndex}-${planKey}`;
-  if(enhancements.history.some(record=>record.id===legacyId))return;
-  const fallbackDate=programDayDate(weekIndex,session.day)?.toISOString()||new Date().toISOString();
+  const matchingRecord=enhancements.history.some(record=>record.programId===enhancements.programId&&record.weekIndex===weekIndex&&record.planKey===planKey&&(
+    record.id===legacyId||(session.completedAt&&record.completedAt===session.completedAt)
+  ));
+  if(matchingRecord)return;
+  const performedDate=programDayDate(weekIndex,session.day);
+  const fallbackDate=performedDate?.toISOString()||session.completedAt||new Date().toISOString();
   enhancements.history.push({
     id:legacyId,programId:enhancements.programId,weekIndex,kind:"gym",planKey,day:String(session.day??""),
-    startedAt:"",completedAt:session.completedAt||fallbackDate,durationMinutes:String(session.durationMinutes||""),
+    startedAt:"",completedAt:session.completedAt||fallbackDate,performedDate:performedDate?localISODate(performedDate):"",durationMinutes:String(session.durationMinutes||""),
     painBeforeLeft:"",painBeforeRight:"",painAfterLeft:"",painAfterRight:"",
     exercises:WORKOUT_PLANS[planKey].exercises.map((exercise,index)=>({
       name:exercise.name,skippedReason:enhancements.weeks[weekIndex].logs[planKey][index].skippedReason,
@@ -252,6 +276,7 @@ state.weeks.forEach((week,weekIndex)=>["A","B"].forEach(planKey=>{
     }))
   });
 }));
+enhancements.history=dedupeHistoryRecords(enhancements.history);
 
 function persistEnhancements(){writeUnifiedSection("enhancements",enhancements);}
 
@@ -266,6 +291,7 @@ function completedTrainingRecordsForWeek(weekIndex){
 function trainingDayIsTaken(weekIndex,dayIndex,exceptPlan=""){
   const day=String(dayIndex);
   if(completedTrainingRecordsForWeek(weekIndex).some(record=>String(record.day)===day))return true;
+  if(enhancements.poolDraft?.week===Number(weekIndex)&&String(enhancements.poolDraft.day)===day)return true;
   const training=state.weeks[weekIndex]?.training;
   return ["A","B"].some(planKey=>planKey!==exceptPlan&&String(training?.[planKey]?.day)===day);
 }
@@ -289,7 +315,28 @@ function parseProgramDate(value){
   const [year,month,day]=value.split("-").map(Number);
   const date=new Date(year,month-1,day);
   date.setHours(0,0,0,0);
-  return Number.isNaN(date.getTime())?null:date;
+  return Number.isNaN(date.getTime())||date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day?null:date;
+}
+
+function normalizeProgramStartValue(value){
+  const date=parseProgramDate(value);
+  return date?localISODate(currentWeekMonday(date)):"";
+}
+
+function dateForProgramDay(startDate,weekIndex,dayIndex){
+  const start=parseProgramDate(startDate),week=Number(weekIndex),day=Number(dayIndex);
+  if(!start||!Number.isInteger(week)||week<0||week>11||!Number.isInteger(day)||day<0||day>6||dayIndex==="")return null;
+  const date=new Date(start);date.setDate(start.getDate()+week*7+day);return date;
+}
+
+function dedupeHistoryRecords(records){
+  const bySignature=new Map();
+  records.forEach(record=>{
+    const signature=[record.programId,record.weekIndex,record.planKey,record.day,record.completedAt].join("|");
+    const existing=bySignature.get(signature);
+    if(!existing||String(existing.id).startsWith("legacy-")&&!String(record.id).startsWith("legacy-"))bySignature.set(signature,record);
+  });
+  return Array.from(bySignature.values());
 }
 
 function weekDates(weekNumber){
@@ -303,11 +350,14 @@ function weekDates(weekNumber){
 }
 
 function programDayDate(weekIndex,dayIndex){
-  const start=parseProgramDate(enhancements.startDate);
-  if(!start)return null;
-  const date=new Date(start);
-  date.setDate(start.getDate()+weekIndex*7+Number(dayIndex||0));
-  return date;
+  return dateForProgramDay(enhancements.startDate,weekIndex,dayIndex);
+}
+
+function recalculateCurrentPerformedDates(){
+  currentProgramHistory().forEach(record=>{
+    const date=programDayDate(record.weekIndex,record.day);
+    record.performedDate=date?localISODate(date):record.performedDate;
+  });
 }
 
 function programPosition(date=new Date()){
@@ -354,6 +404,8 @@ function renderSummary(){
   document.getElementById("summaryWaist").textContent=formatWaistDelta(waistStats().delta);
   document.getElementById("summaryBackup").textContent=enhancements.lastBackupAt?
     new Intl.DateTimeFormat("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(enhancements.lastBackupAt)):"Немає";
+  const backupAge=enhancements.lastBackupAt?Date.now()-new Date(enhancements.lastBackupAt).getTime():Infinity;
+  const reminder=document.getElementById("backupReminder");if(reminder)reminder.hidden=backupAge<=7*86400000;
 }
 
 function renderWellbeing(){
@@ -445,8 +497,8 @@ function formatSet(set,planKey="A",exerciseIndex=1){
 function previousExerciseResult(weekIndex,planKey,exerciseIndex){
   const recorded=currentProgramHistory()
     .filter(record=>record.planKey===planKey&&record.exercises?.[exerciseIndex]?.sets?.some(set=>set.weight||set.reps||set.done))
-    .sort((a,b)=>new Date(b.completedAt).getTime()-new Date(a.completedAt).getTime())[0];
-  if(recorded)return {week:recorded.weekIndex+1,date:recorded.completedAt,text:recorded.exercises[exerciseIndex].sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
+    .sort((a,b)=>new Date(b.performedDate||b.completedAt).getTime()-new Date(a.performedDate||a.completedAt).getTime())[0];
+  if(recorded)return {week:recorded.weekIndex+1,date:recorded.performedDate||recorded.completedAt,text:recorded.exercises[exerciseIndex].sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
   for(let index=weekIndex-1;index>=0;index--){
     const log=exerciseLog(index,planKey,exerciseIndex);
     if(log?.sets?.some(set=>set.weight||set.reps||set.done))return {week:index+1,text:log.sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
@@ -536,15 +588,153 @@ function openTodayWorkout(weekIndex,planKey,guided){
 
 function trainingRecords(){
   return currentProgramHistory().map(record=>{
-    const completedDate=record.completedAt?new Date(record.completedAt):programDayDate(record.weekIndex,record.day);
-    const validDate=completedDate&&!Number.isNaN(completedDate.getTime())?completedDate:null;
+    const performedDate=record.performedDate?parseProgramDate(record.performedDate):programDayDate(record.weekIndex,record.day);
+    const validDate=performedDate&&!Number.isNaN(performedDate.getTime())?performedDate:null;
     return {...record,date:validDate,sort:validDate?.getTime()||record.weekIndex};
   }).sort((a,b)=>b.sort-a.sort);
+}
+
+function recentHistoryUndoAvailable(){
+  const snapshot=enhancements.lastHistoryChangeSnapshot,created=snapshot?.createdAt?new Date(snapshot.createdAt).getTime():0;
+  return Boolean(snapshot&&Date.now()-created<HISTORY_UNDO_MS);
+}
+
+function historyActionsHTML(record){
+  const id=encodeURIComponent(record.id);
+  return `<div class="history-actions"><button type="button" onclick="openHistoryEditor('${id}')">Виправити</button><button class="history-cancel" type="button" onclick="cancelHistoryRecord('${id}')">Скасувати запис</button></div>`;
+}
+
+function captureHistorySnapshot(record,index,weekIndexes,type){
+  const unique=[...new Set(weekIndexes.filter(value=>Number.isInteger(value)&&value>=0&&value<12))];
+  return {
+    type,createdAt:new Date().toISOString(),programId:enhancements.programId,index,record:cloneData(record),
+    weeks:unique.map(weekIndex=>({weekIndex,tracker:cloneData(state.weeks[weekIndex]),enhancement:cloneData(enhancements.weeks[weekIndex])}))
+  };
+}
+
+function historyCorrectionDayConflict(record,weekIndex,dayIndex){
+  if(currentProgramHistory().some(item=>item.id!==record.id&&item.weekIndex===weekIndex&&String(item.day)===String(dayIndex)))return true;
+  if(enhancements.poolDraft?.week===weekIndex&&String(enhancements.poolDraft.day)===String(dayIndex))return true;
+  return ["A","B"].some(planKey=>{
+    const session=state.weeks[weekIndex].training[planKey];
+    if(String(session.day)!==String(dayIndex))return false;
+    if(record.kind==="gym"&&record.planKey===planKey&&session.completedAt===record.completedAt)return false;
+    if(record.kind==="pool"&&record.replacesPlan===planKey)return false;
+    return true;
+  });
+}
+
+function historyEditSetRows(record){
+  if(isPoolRecord(record))return "";
+  return `<div class="history-edit-sets"><strong>Підходи та повтори</strong>${record.exercises.map((exercise,exerciseIndex)=>`
+    <details><summary>${escapeNote(exercise.name)}</summary>
+      <label><span>Причина пропуску</span><select name="skip_${exerciseIndex}">${skipReasonOptions(exercise.skippedReason)}</select></label>
+      <div>${exercise.sets.map((set,setIndex)=>`<div class="history-edit-set"><span>${setIndex+1}</span><label><small>Вага / опір</small><input name="weight_${exerciseIndex}_${setIndex}" maxlength="20" value="${escapeNote(set.weight)}"></label><label><small>Повтори / час</small><input name="reps_${exerciseIndex}_${setIndex}" maxlength="24" value="${escapeNote(set.reps)}"></label><label class="history-edit-done"><input name="done_${exerciseIndex}_${setIndex}" type="checkbox" ${set.done?"checked":""}> виконано</label></div>`).join("")}</div>
+    </details>`).join("")}</div>`;
+}
+
+function openHistoryEditor(encodedId){
+  const id=decodeURIComponent(encodedId),record=currentProgramHistory().find(item=>item.id===id);
+  const dialog=document.getElementById("historyEditDialog"),content=document.getElementById("historyEditContent");
+  if(!record||!dialog||!content)return;
+  dialog.dataset.recordId=id;
+  const start=parseProgramDate(enhancements.startDate),end=start?new Date(start):null;if(end)end.setDate(end.getDate()+83);
+  const performedDate=record.performedDate||(programDayDate(record.weekIndex,record.day)?localISODate(programDayDate(record.weekIndex,record.day)):"");
+  const poolFields=isPoolRecord(record)?`<div class="history-edit-grid">
+    <label><span>Дистанція, м</span><input name="distanceMeters" type="number" min="0" max="20000" step="25" value="${escapeNote(record.distanceMeters)}"></label>
+    <label><span>Вид активності</span><select name="swimStyle">${Object.entries(SWIM_STYLE_LABELS).map(([value,label])=>`<option value="${value}" ${record.swimStyle===value?"selected":""}>${label}</option>`).join("")}</select></label>
+    <label><span>Інтенсивність</span><select name="intensity">${Object.entries(INTENSITY_LABELS).map(([value,label])=>`<option value="${value}" ${record.intensity===value?"selected":""}>${label}</option>`).join("")}</select></label>
+    <label><span>Що замінює?</span><select name="replacesPlan"><option value="">Окреме тренування</option><option value="A" ${record.replacesPlan==="A"?"selected":""}>Тренування A</option><option value="B" ${record.replacesPlan==="B"?"selected":""}>Тренування B</option></select></label>
+  </div><label class="history-edit-notes"><span>Нотатка</span><textarea name="notes" maxlength="500" rows="3">${escapeNote(record.notes)}</textarea></label>`:"";
+  content.innerHTML=`<div class="history-edit-title"><span>${isPoolRecord(record)?"🏊 Басейн":`Тренування ${record.planKey}`}</span><strong>Зміни одразу оновлять календар, прогрес та історію.</strong></div>
+    <div class="history-edit-grid">
+      <label><span>Дата тренування</span><input name="performedDate" type="date" required min="${start?localISODate(start):""}" max="${end?localISODate(end):""}" value="${performedDate}"></label>
+      <label><span>Тривалість, хв</span><input name="durationMinutes" type="number" min="1" max="600" value="${escapeNote(record.durationMinutes)}"></label>
+      <label><span>Ліве коліно · до</span><select name="painBeforeLeft">${painOptions(record.painBeforeLeft)}</select></label>
+      <label><span>Праве коліно · до</span><select name="painBeforeRight">${painOptions(record.painBeforeRight)}</select></label>
+      <label><span>Ліве коліно · після</span><select name="painAfterLeft">${painOptions(record.painAfterLeft)}</select></label>
+      <label><span>Праве коліно · після</span><select name="painAfterRight">${painOptions(record.painAfterRight)}</select></label>
+    </div>${poolFields}${historyEditSetRows(record)}
+    <footer class="history-edit-actions"><button type="button" onclick="closeHistoryEditor()">Закрити</button><button class="history-edit-save" type="submit">Зберегти виправлення</button></footer>`;
+  document.body.classList.add("history-edit-open");
+  if(!dialog.open){if(typeof dialog.showModal==="function")dialog.showModal();else dialog.setAttribute("open","");}
+}
+
+function closeHistoryEditor(){
+  const dialog=document.getElementById("historyEditDialog");
+  if(dialog?.open&&typeof dialog.close==="function")dialog.close();else dialog?.removeAttribute("open");
+  document.body.classList.remove("history-edit-open");
+}
+
+function saveHistoryCorrection(event){
+  event.preventDefault();
+  const dialog=document.getElementById("historyEditDialog"),id=dialog?.dataset.recordId;
+  const index=enhancements.history.findIndex(item=>item.programId===enhancements.programId&&item.id===id);
+  if(index<0)return;
+  const original=enhancements.history[index],form=new FormData(event.currentTarget),performedDate=String(form.get("performedDate")||"");
+  const date=parseProgramDate(performedDate),position=date?programPosition(date):{status:"invalid"};
+  if(position.status!=="active"){showToast("Дата має бути в межах поточної 12-тижневої програми.");return;}
+  if(historyCorrectionDayConflict(original,position.weekIndex,position.dayIndex)){showToast("На цю дату вже заплановано або записано інше тренування.");return;}
+  const duration=String(form.get("durationMinutes")||"");
+  if(duration!==""&&(!Number.isFinite(Number(duration))||Number(duration)<1||Number(duration)>600)){showToast("Вкажи тривалість від 1 до 600 хвилин.");return;}
+  const updated=cloneData(original),affectedWeeks=[original.weekIndex,position.weekIndex];
+  const snapshot=captureHistorySnapshot(original,index,affectedWeeks,"edit");
+  updated.weekIndex=position.weekIndex;updated.day=String(position.dayIndex);updated.performedDate=performedDate;updated.durationMinutes=duration;
+  ["painBeforeLeft","painBeforeRight","painAfterLeft","painAfterRight"].forEach(key=>{updated[key]=String(form.get(key)||"");});
+  if(isPoolRecord(updated)){
+    const distance=String(form.get("distanceMeters")||"");
+    if(distance!==""&&(!Number.isFinite(Number(distance))||Number(distance)<0||Number(distance)>20000)){showToast("Вкажи дистанцію від 0 до 20 000 метрів.");return;}
+    updated.distanceMeters=distance;updated.swimStyle=String(form.get("swimStyle")||"");updated.intensity=String(form.get("intensity")||"");
+    updated.replacesPlan=["A","B"].includes(String(form.get("replacesPlan")))?String(form.get("replacesPlan")):"";
+    updated.notes=String(form.get("notes")||"").slice(0,500);
+  }else{
+    updated.exercises.forEach((exercise,exerciseIndex)=>{
+      exercise.skippedReason=String(form.get(`skip_${exerciseIndex}`)||"").slice(0,80);
+      exercise.sets.forEach((set,setIndex)=>{set.weight=String(form.get(`weight_${exerciseIndex}_${setIndex}`)||"").slice(0,20);set.reps=String(form.get(`reps_${exerciseIndex}_${setIndex}`)||"").slice(0,24);set.done=form.has(`done_${exerciseIndex}_${setIndex}`);});
+    });
+    const oldSession=state.weeks[original.weekIndex].training[original.planKey],linked=oldSession.completedAt===original.completedAt;
+    if(linked){
+      oldSession.done=false;oldSession.completedAt="";oldSession.durationMinutes="";oldSession.exercises=oldSession.exercises.map(()=>false);
+      const target=state.weeks[updated.weekIndex].training[updated.planKey];
+      target.day=updated.day;target.done=true;target.completedAt=updated.completedAt;target.durationMinutes=updated.durationMinutes;
+      target.exercises=updated.exercises.map(exercise=>Boolean(exercise.sets.length)&&exercise.sets.every(set=>set.done));
+      enhancements.weeks[updated.weekIndex].logs[updated.planKey]=updated.exercises.map((exercise,exerciseIndex)=>normalizeExerciseLog(exercise,updated.planKey,exerciseIndex));
+    }
+  }
+  enhancements.history[index]=updated;enhancements.lastHistoryChangeSnapshot=snapshot;
+  persistEnhancements();persist();closeHistoryEditor();renderAll();showToast("Запис виправлено. Зміну можна скасувати протягом 30 хвилин.");
+}
+
+function cancelHistoryRecord(encodedId){
+  const id=decodeURIComponent(encodedId),index=enhancements.history.findIndex(item=>item.programId===enhancements.programId&&item.id===id);
+  if(index<0)return;
+  const record=enhancements.history[index];
+  if(!window.confirm(`Скасувати запис «${isPoolRecord(record)?"Басейн":`Тренування ${record.planKey}`}»? Його можна буде відновити протягом 30 хвилин.`))return;
+  enhancements.lastHistoryChangeSnapshot=captureHistorySnapshot(record,index,[record.weekIndex],"cancel");
+  enhancements.history.splice(index,1);
+  if(!isPoolRecord(record)){
+    const session=state.weeks[record.weekIndex].training[record.planKey];
+    if(session.completedAt===record.completedAt){session.done=false;session.completedAt="";session.durationMinutes="";session.exercises=session.exercises.map(()=>false);}
+  }else if(record.replacesPlan){
+    const session=state.weeks[record.weekIndex].training[record.replacesPlan];
+    if(!session.done&&session.day==="")session.day=record.day;
+  }
+  persistEnhancements();persist();renderAll();showToast("Запис скасовано. Його можна відновити протягом 30 хвилин.");
+}
+
+function undoHistoryChange(){
+  const snapshot=enhancements.lastHistoryChangeSnapshot;
+  if(!recentHistoryUndoAvailable()){enhancements.lastHistoryChangeSnapshot=null;persistEnhancements();renderHistory();showToast("Час відновлення минув.");return;}
+  snapshot.weeks.forEach(item=>{state.weeks[item.weekIndex]=normalizeState({weeks:Array.from({length:12},(_,index)=>index===item.weekIndex?item.tracker:blankWeek())}).weeks[item.weekIndex];enhancements.weeks[item.weekIndex]=normalizeEnhancements({weeks:Array.from({length:12},(_,index)=>index===item.weekIndex?item.enhancement:blankEnhancementWeek())}).weeks[item.weekIndex];});
+  const existingIndex=enhancements.history.findIndex(item=>item.id===snapshot.record.id);
+  if(existingIndex>=0)enhancements.history[existingIndex]=normalizeHistoryRecord(snapshot.record);else enhancements.history.splice(Math.min(snapshot.index,enhancements.history.length),0,normalizeHistoryRecord(snapshot.record));
+  enhancements.lastHistoryChangeSnapshot=null;persistEnhancements();persist();renderAll();showToast("Попередній стан запису відновлено.");
 }
 
 function renderHistory(){
   const list=document.getElementById("historyList"),count=document.getElementById("historyCount");if(!list||!count)return;
   const records=trainingRecords();count.textContent=`${records.length} ${records.length===1?"запис":"записів"}`;
+  const undo=document.getElementById("undoHistoryChange");if(undo)undo.hidden=!recentHistoryUndoAvailable();
   if(!records.length){list.innerHTML=`<div class="history-empty"><strong>Історія поки порожня</strong><span>Завершене тренування автоматично з’явиться тут разом із підходами та тривалістю.</span></div>`;return;}
   const dateFormat=new Intl.DateTimeFormat("uk-UA",{day:"numeric",month:"long",year:"numeric"});
   list.innerHTML=records.map(record=>{
@@ -559,7 +749,7 @@ function renderHistory(){
         record.replacesPlan?`Замість тренування ${record.replacesPlan}`:""
       ].filter(Boolean).map(text=>`<li><span>${text}</span></li>`).join("");
       const notes=record.notes?`<p class="history-pool-note">${escapeNote(record.notes)}</p>`:"";
-      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'POOL')">Відкрити тиждень ${record.weekIndex+1}</button></article>`;
+      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'POOL')">Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
     }
     const plan=WORKOUT_PLANS[record.planKey];
     const completed=record.exercises.filter(exercise=>exercise.sets.length&&exercise.sets.every(set=>set.done)).length;
@@ -569,7 +759,7 @@ function renderHistory(){
       if(!snapshot?.sets?.some(set=>set.weight||set.reps||set.done))return "";
       return `<li><span>${escapeNote(exercise.name)}</span><strong>${escapeNote(snapshot.sets.map(set=>formatSet(set,record.planKey,index)).join(" · ")||"Виконано")}</strong></li>`;
     }).join("");
-    return `<article class="history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>Тренування ${record.planKey}</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span><span>${completed} / ${plan.exercises.length} вправ</span>${pain}</div></div><details><summary>Показати результати</summary><ul>${rows||"<li><span>Результати підходів не записані</span></li>"}</ul></details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'${record.planKey}')">Відкрити тиждень ${record.weekIndex+1}</button></article>`;
+    return `<article class="history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>Тренування ${record.planKey}</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span><span>${completed} / ${plan.exercises.length} вправ</span>${pain}</div></div><details><summary>Показати результати</summary><ul>${rows||"<li><span>Результати підходів не записані</span></li>"}</ul></details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'${record.planKey}')">Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
   }).join("");
 }
 
@@ -599,7 +789,24 @@ function poolDayOptions(draft){
 }
 
 function openPoolSession(weekIndex=currentWeek-1){
-  if(enhancements.activeWorkout){showToast("Спочатку заверши або скинь активне тренування A/B.");return;}
+  if(enhancements.activeWorkout){
+    const active=enhancements.activeWorkout,session=state.weeks[active.week].training[active.plan];
+    const overwritesDraft=poolDraftHasValues(enhancements.poolDraft);
+    const message=`Замінити активне тренування ${active.plan} басейном? Вага й повтори залишаться у чернетці, а виконані позначки буде скинуто.${overwritesDraft?" Поточну чернетку басейну буде замінено.":""}`;
+    if(!window.confirm(message))return;
+    session.done=false;session.completedAt="";session.durationMinutes="";session.exercises=session.exercises.map(()=>false);
+    enhancements.weeks[active.week].logs[active.plan].forEach(log=>log.sets.forEach(set=>{set.done=false;}));
+    enhancements.poolDraft=blankPoolDraft(active.week);
+    enhancements.poolDraft.replacesPlan=active.plan;
+    enhancements.poolDraft.day=session.day;
+    enhancements.activeWorkout=null;
+    const guidedDialog=document.getElementById("guidedWorkoutDialog");
+    if(guidedDialog?.open&&typeof guidedDialog.close==="function")guidedDialog.close();else guidedDialog?.removeAttribute("open");
+    document.body.classList.remove("guided-open");
+    weekIndex=active.week;
+    persistEnhancements();persist();
+    showToast(`Тренування ${active.plan} замінено чернеткою басейну.`);
+  }
   const targetWeek=Number.isInteger(Number(weekIndex))?Math.max(0,Math.min(11,Number(weekIndex))):currentWeek-1;
   if(enhancements.poolDraft&&enhancements.poolDraft.week!==targetWeek&&poolDraftHasValues(enhancements.poolDraft)&&!window.confirm("Є незавершена чернетка басейну для іншого тижня. Очистити її та створити нову?"))return;
   if(!enhancements.poolDraft||enhancements.poolDraft.week!==targetWeek)enhancements.poolDraft=blankPoolDraft(targetWeek);
@@ -639,12 +846,13 @@ function updatePoolDraft(key,value){
   if(key==="replacesPlan"&&draft.day!==""&&poolDayIsTaken(draft,draft.day))draft.day="";
   persistEnhancements();
   if(["replacesPlan","painBeforeLeft","painBeforeRight","painAfterLeft","painAfterRight"].includes(key))renderPoolSession();
+  if(["day","replacesPlan"].includes(key))renderToday();
 }
 
 function resetPoolDraft(){
   const draft=enhancements.poolDraft;if(!draft)return;
   if(poolDraftHasValues(draft)&&!window.confirm("Очистити всі введені дані басейну?"))return;
-  enhancements.poolDraft=blankPoolDraft(draft.week);persistEnhancements();renderPoolSession();showToast("Чернетку басейну очищено.");
+  enhancements.poolDraft=blankPoolDraft(draft.week);persistEnhancements();renderAll();renderPoolSession();showToast("Чернетку басейну очищено.");
 }
 
 function savePoolSession(){
@@ -657,9 +865,10 @@ function savePoolSession(){
   if(!draft.swimStyle){showToast("Обери вид активності у басейні.");return;}
   if(!draft.intensity){showToast("Обери інтенсивність тренування.");return;}
   const completedAt=new Date().toISOString();
+  const performedDate=programDayDate(draft.week,draft.day);
   enhancements.history.push({
     id:makeId("pool"),programId:enhancements.programId,weekIndex:draft.week,kind:"pool",planKey:"POOL",day:String(draft.day),
-    startedAt:"",completedAt,durationMinutes:String(duration),distanceMeters:distance===null?"":String(distance),swimStyle:draft.swimStyle,intensity:draft.intensity,
+    startedAt:"",completedAt,performedDate:performedDate?localISODate(performedDate):"",durationMinutes:String(duration),distanceMeters:distance===null?"":String(distance),swimStyle:draft.swimStyle,intensity:draft.intensity,
     replacesPlan:draft.replacesPlan,painBeforeLeft:draft.painBeforeLeft,painBeforeRight:draft.painBeforeRight,painAfterLeft:draft.painAfterLeft,painAfterRight:draft.painAfterRight,
     notes:draft.notes,exercises:[]
   });
@@ -673,7 +882,7 @@ function savePoolSession(){
 function closePoolSession(){
   const dialog=document.getElementById("poolSessionDialog");
   if(dialog?.open&&typeof dialog.close==="function")dialog.close();else dialog?.removeAttribute("open");
-  document.body.classList.remove("pool-open");renderTraining();
+  document.body.classList.remove("pool-open");renderAll();
 }
 
 function guidedWorkoutButtonLabel(planKey){
@@ -685,6 +894,13 @@ function guidedWorkoutButtonLabel(planKey){
 function startGuidedWorkout(planKey){
   currentPlan=planKey;
   const session=state.weeks[currentWeek-1].training[planKey],existing=enhancements.activeWorkout;
+  const poolConflict=enhancements.poolDraft?.week===currentWeek-1&&(
+    enhancements.poolDraft.replacesPlan===planKey||(session.day!==""&&String(enhancements.poolDraft.day)===String(session.day))
+  );
+  if(!existing&&poolConflict){
+    if(!window.confirm(`Для цього дня вже підготовлено басейн${enhancements.poolDraft.replacesPlan?` замість тренування ${enhancements.poolDraft.replacesPlan}`:""}. Очистити чернетку басейну й почати тренування ${planKey}?`))return;
+    enhancements.poolDraft=null;persistEnhancements();renderAll();
+  }
   if(existing&&(existing.week!==currentWeek-1||existing.plan!==planKey)){
     currentWeek=existing.week+1;currentPlan=existing.plan;renderAll();renderGuidedWorkout();
     const existingDialog=document.getElementById("guidedWorkoutDialog");document.body.classList.add("guided-open");
@@ -857,10 +1073,11 @@ function finishGuidedWorkout(){
   if(completed<MIN_EXERCISES_TO_COMPLETE){showToast(`Заверши щонайменше ${MIN_EXERCISES_TO_COMPLETE} вправи.`);return;}
   if(trainingDayIsTaken(active.week,session.day,active.plan)){showToast("На цей день уже записане інше тренування.");return;}
   const completedAt=new Date().toISOString(),durationMinutes=activeWorkoutMinutes(active);
+  const performedDate=programDayDate(active.week,session.day);
   session.done=true;session.completedAt=completedAt;session.durationMinutes=durationMinutes;
   enhancements.history.push({
     id:makeId("workout"),programId:enhancements.programId,weekIndex:active.week,kind:"gym",planKey:active.plan,day:String(session.day),
-    startedAt:active.startedAt,completedAt,durationMinutes:String(durationMinutes),
+    startedAt:active.startedAt,completedAt,performedDate:performedDate?localISODate(performedDate):"",durationMinutes:String(durationMinutes),
     painBeforeLeft:active.painBeforeLeft,painBeforeRight:active.painBeforeRight,painAfterLeft:active.painAfterLeft,painAfterRight:active.painAfterRight,
     exercises:WORKOUT_PLANS[active.plan].exercises.map((exercise,index)=>({name:exercise.name,...cloneData(exerciseLog(active.week,active.plan,index))}))
   });
@@ -914,6 +1131,20 @@ function closeGuidedWorkout(){
   document.body.classList.remove("guided-open");renderTraining();
 }
 
+function archiveHistoryRecordHTML(record,archive){
+  const date=record.performedDate?parseProgramDate(record.performedDate):dateForProgramDay(archive.startDate,record.weekIndex,record.day);
+  const dateLabel=date?new Intl.DateTimeFormat("uk-UA",{day:"numeric",month:"long",year:"numeric"}).format(date):`Тиждень ${record.weekIndex+1}`;
+  if(isPoolRecord(record)){
+    const details=[record.durationMinutes?`${record.durationMinutes} хв`:"",record.distanceMeters?`${record.distanceMeters} м`:"",SWIM_STYLE_LABELS[record.swimStyle]||"",INTENSITY_LABELS[record.intensity]||"",record.replacesPlan?`замість ${record.replacesPlan}`:""].filter(Boolean).join(" · ");
+    return `<article class="archive-session pool"><div><span>${dateLabel}</span><strong>🏊 Басейн</strong></div><p>${escapeNote(details||"Без додаткових показників")}</p>${record.notes?`<small>${escapeNote(record.notes)}</small>`:""}</article>`;
+  }
+  const rows=record.exercises.map((exercise,index)=>{
+    const values=exercise.sets?.map(set=>formatSet(set,record.planKey,index)).filter(value=>value!=="—").join(" · ");
+    return exercise.skippedReason?`<li><span>${escapeNote(exercise.name)}</span><b>Пропущено: ${escapeNote(exercise.skippedReason)}</b></li>`:(values?`<li><span>${escapeNote(exercise.name)}</span><b>${escapeNote(values)}</b></li>`:"");
+  }).join("");
+  return `<article class="archive-session"><div><span>${dateLabel}</span><strong>Тренування ${record.planKey}</strong></div><p>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"Тривалість не записано"}</p><details><summary>Підходи та повтори</summary><ul>${rows||"<li><span>Деталі не записані</span></li>"}</ul></details></article>`;
+}
+
 function renderProgramArchive(){
   const status=document.getElementById("programArchiveStatus"),list=document.getElementById("programArchiveList");
   if(!status||!list)return;
@@ -927,7 +1158,7 @@ function renderProgramArchive(){
     const startWeight=archive.tracker?.weeks?.map(week=>weightNumber(week.startWeight)).find(value=>value!==null)??null;
     const endWeights=archive.tracker?.weeks?.map(week=>weightNumber(week.endWeight)).filter(value=>value!==null)||[];
     const delta=startWeight!==null&&endWeights.length?endWeights[endWeights.length-1]-startWeight:null;
-    return `<article><div><strong>${start?dateFormat.format(start):"Без дати"}${end?` — ${dateFormat.format(end)}`:""}</strong><span>Архівовано ${dateFormat.format(new Date(archive.archivedAt))}</span></div><div><b>${workouts} тренувань</b><span>${delta===null?"Вага: —":`Вага: ${delta>0?"+":""}${delta.toFixed(1)} кг`}</span></div></article>`;
+    return `<section class="program-archive-card"><header><div><strong>${start?dateFormat.format(start):"Без дати"}${end?` — ${dateFormat.format(end)}`:""}</strong><span>Архівовано ${dateFormat.format(new Date(archive.archivedAt))}</span></div><div><b>${workouts} тренувань</b><span>${delta===null?"Вага: —":`Вага: ${delta>0?"+":""}${delta.toFixed(1)} кг`}</span></div></header><details class="archive-history-details"><summary>Детальна історія (${workouts})</summary><div class="archive-session-list">${workouts?archive.history.slice().sort((a,b)=>String(b.performedDate||b.completedAt).localeCompare(String(a.performedDate||a.completedAt))).map(record=>archiveHistoryRecordHTML(record,archive)).join(""):'<div class="archive-empty">Записів тренувань немає.</div>'}</div></details></section>`;
   }).join("")}</div></details>`;
 }
 
@@ -940,11 +1171,12 @@ function archiveCurrentProgram(){
   });
   state=defaultState();dayNotes=emptyNotes();currentWeek=1;currentPlan="A";
   enhancements.programId=makeId("program");enhancements.startDate=localISODate(currentWeekMonday());
-  enhancements.weeks=Array.from({length:12},blankEnhancementWeek);enhancements.activeWorkout=null;enhancements.poolDraft=null;enhancements.lastResetSnapshot=null;
+  enhancements.weeks=Array.from({length:12},blankEnhancementWeek);enhancements.activeWorkout=null;enhancements.poolDraft=null;enhancements.lastResetSnapshot=null;enhancements.lastHistoryChangeSnapshot=null;
   migrateUnifiedStore();closeGuidedWorkout();renderAll();window.scrollTo({top:0,behavior:"smooth"});showToast("Програму архівовано. Нова 12-тижнева програма готова.");
 }
 
-function exportBackup(){
+async function exportBackup(){
+  try{await navigator.storage?.persist?.();}catch(e){}
   const payload={format:"health-tracker-backup",version:ENHANCEMENTS_VERSION,exportedAt:new Date().toISOString(),tracker:state,notes:dayNotes,enhancements};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download=`health-tracker-backup-${localISODate()}.json`;link.click();URL.revokeObjectURL(url);
@@ -956,14 +1188,17 @@ async function importBackup(file){
     const payload=JSON.parse(await file.text());
     if(payload?.format!=="health-tracker-backup"||!Array.isArray(payload?.tracker?.weeks)||payload.tracker.weeks.length!==12)throw new Error("invalid");
     const restored={version:ENHANCEMENTS_VERSION,tracker:normalizeState(payload.tracker),notes:normalizeNotes(payload.notes),enhancements:normalizeEnhancements(payload.enhancements)};
-    localStorage.setItem(UNIFIED_KEY,JSON.stringify(restored));showToast("Копію відновлено. Оновлюю застосунок…");setTimeout(()=>location.reload(),700);
+    writeUnifiedStore(restored);showToast("Копію відновлено. Оновлюю застосунок…");setTimeout(()=>location.reload(),700);
   }catch(e){showToast("Цей файл не є коректною резервною копією трекера.");}
 }
 
 fillNumberSelect("energyLevel",1,10);fillNumberSelect("leftKneePain",0,10);fillNumberSelect("rightKneePain",0,10);
 
 document.getElementById("programStartDate").addEventListener("change",event=>{
-  if(!parseProgramDate(event.target.value))return;enhancements.startDate=event.target.value;persistEnhancements();renderAll();
+  const original=event.target.value,selected=parseProgramDate(original),normalized=normalizeProgramStartValue(original);
+  if(!selected||!normalized){event.target.value=enhancements.startDate;showToast("Обери коректну дату початку програми.");return;}
+  enhancements.startDate=normalized;recalculateCurrentPerformedDates();persistEnhancements();renderAll();
+  if(normalized!==original)showToast("Початок тижня автоматично перенесено на понеділок.");
 });
 
 const wellbeingBindings={sleepHours:"sleep",energyLevel:"energy",leftKneePain:"painLeft",rightKneePain:"painRight"};
@@ -994,6 +1229,9 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 const poolDialog=document.getElementById("poolSessionDialog");
 poolDialog.addEventListener("cancel",event=>{event.preventDefault();closePoolSession();});
 poolDialog.addEventListener("close",()=>document.body.classList.remove("pool-open"));
+const historyEditDialog=document.getElementById("historyEditDialog");
+historyEditDialog.addEventListener("cancel",event=>{event.preventDefault();closeHistoryEditor();});
+historyEditDialog.addEventListener("close",()=>document.body.classList.remove("history-edit-open"));
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 
