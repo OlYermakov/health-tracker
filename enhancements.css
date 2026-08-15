@@ -40,6 +40,7 @@
 .summary-card{padding:15px;border-radius:17px;border:1px solid var(--line);background:rgba(255,255,255,.035);display:grid;gap:7px}
 .summary-card span{color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
 .summary-card strong{font-size:21px}
+.program-lifecycle{margin-top:14px;padding:14px 15px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.025)}.program-lifecycle>div{display:grid;gap:4px}.program-lifecycle strong{font-size:13px}.program-lifecycle span{color:var(--muted);font-size:11px}.program-lifecycle button{min-height:42px;padding:9px 13px;border:1px solid rgba(121,231,255,.3);border-radius:12px;background:rgba(121,231,255,.1);color:var(--text);font-weight:850;cursor:pointer}.program-archive-details{margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.02)}.program-archive-details>summary{color:var(--cyan);font-size:12px;font-weight:850;cursor:pointer}.program-archive-list{display:grid;gap:8px;margin-top:11px}.program-archive-list article{padding:11px 12px;display:flex;justify-content:space-between;gap:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}.program-archive-list article>div{display:grid;gap:3px}.program-archive-list article>div:last-child{text-align:right}.program-archive-list strong,.program-archive-list b{font-size:12px}.program-archive-list span{color:var(--muted);font-size:10px}
 .set-log{margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
 .previous-result{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:9px}
 .previous-result span{color:var(--muted);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
@@ -60,6 +61,7 @@
 .history-card-top{display:flex;justify-content:space-between;gap:12px}
 .history-card-top>div:first-child>span{color:var(--muted);font-size:11px;text-transform:capitalize}.history-card h3{margin:4px 0 0;font-size:19px}
 .history-metrics{display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end}.history-metrics span{padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);font-size:10px;font-weight:800}
+.history-metrics .pain-high{color:var(--amber);background:rgba(255,209,102,.09)}.history-card li .history-skipped{color:var(--amber)}
 .history-card details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.history-card summary{color:var(--cyan);font-size:12px;font-weight:850;cursor:pointer}.history-card ul{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:7px}.history-card li{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px}.history-card li strong{color:var(--text);text-align:right;font-size:11px}
 .history-open{margin-top:12px;border:0;background:transparent;color:var(--muted);padding:0;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .history-empty{grid-column:1/-1;padding:18px;border:1px dashed var(--line);border-radius:16px;display:grid;gap:5px}.history-empty span{color:var(--muted);font-size:12px}
@@ -143,6 +145,7 @@
   .wellbeing-grid input,.wellbeing-grid select{min-height:44px}
   .summary-card{padding:13px;min-width:0}
   .summary-card strong{font-size:19px}
+  .program-lifecycle{align-items:stretch;flex-direction:column}.program-lifecycle button{width:100%}.program-archive-list article{display:grid}.program-archive-list article>div:last-child{text-align:left}
   .training-section{margin-top:12px;padding:15px}
   .training-head{gap:12px}
   .training-head h2{font-size:25px}
