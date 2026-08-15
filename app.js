@@ -56,7 +56,7 @@ function readUnifiedStore(){
 
 function writeUnifiedSection(section,value){
   const current=readUnifiedStore()||{};
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:5,[section]:value}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({...current,version:6,[section]:value}));
 }
 
 function blankSession(planKey){
@@ -135,7 +135,7 @@ function loadNotes(){
 let dayNotes=loadNotes();
 
 function migrateUnifiedStore(){
-  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:5,tracker:state,notes:dayNotes,enhancements}));
+  localStorage.setItem(UNIFIED_KEY,JSON.stringify({version:6,tracker:state,notes:dayNotes,enhancements}));
 }
 function persist(){writeUnifiedSection("tracker",state);}
 function save(){ persist(); renderAll(); }
@@ -234,7 +234,7 @@ function toggleCheck(i,key){
   const w=state.weeks[currentWeek-1];
   const d=w.days[i];
   if(key==="activity"&&completedSessionOnDay(w,i)){
-    showToast("Цей день уже зараховано завершеним тренуванням A або B.");
+    showToast("Цей день уже зараховано завершеним тренуванням або басейном.");
     return;
   }
   d[key]=!d[key];
@@ -300,6 +300,11 @@ function renderTraining(){
     </article>`).join("");
   const guidedAction=typeof guidedWorkoutButtonLabel==="function"?guidedWorkoutButtonLabel(currentPlan):"▶ Почати тренування";
   document.getElementById("workoutPlan").innerHTML=`
+    <aside class="pool-alternative">
+      <div class="pool-alternative-icon" aria-hidden="true">🏊</div>
+      <div><strong>Замість залу — басейн</strong><span>Одне відвідування басейну зараховується як одне з двох тренувань тижня.</span></div>
+      <button type="button" onclick="openPoolSession()">Записати басейн</button>
+    </aside>
     <div class="plan-toolbar">
       <div>
         <div class="plan-kicker">${plan.title} · ${plan.subtitle}</div>
