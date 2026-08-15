@@ -423,6 +423,7 @@ function renderGuidedWorkout(){
     <div class="guided-sets"><div class="guided-section-title"><strong>Підходи</strong><span>${completed} / ${plan.exercises.length} вправ завершено</span></div>${setRowsHTML(active.plan,active.index,log,true)}</div>
     <div class="guided-rest"><div><span>Відпочинок</span><strong id="restTimerDisplay">Готовий до наступного підходу</strong></div><div><button type="button" onclick="startRestTimer(60)">1:00</button><button type="button" onclick="startRestTimer(90)">1:30</button><button type="button" onclick="startRestTimer(120)">2:00</button><button class="rest-skip" type="button" onclick="skipRestTimer()">Пропустити</button></div></div>
     <div class="guided-day"><label for="guidedSessionDay">День тренування</label><select id="guidedSessionDay" onchange="setGuidedDay(this.value)">${guidedDayOptions(active.plan)}</select></div>
+    <div class="guided-reset-panel"><div><strong>Почати заново?</strong><small>Перезапуск збереже вагу, повтори та вибраний день. Повне скидання очистить усі дані цього тренування.</small></div><div class="guided-reset-buttons"><button type="button" onclick="restartGuidedWorkout(false)">↻ Перезапустити</button><button class="guided-reset-all" type="button" onclick="restartGuidedWorkout(true)">Скинути повністю</button></div></div>
     <footer class="guided-actions"><button type="button" onclick="guidedNavigate(-1)" ${active.index===0?"disabled":""}>← Попередня</button>${active.index<plan.exercises.length-1?`<button class="guided-next" type="button" onclick="guidedNavigate(1)">Наступна →</button>`:`<button class="guided-finish" type="button" onclick="finishGuidedWorkout()">Завершити тренування</button>`}</footer>`;
   updateRestTimer();
 }
@@ -443,6 +444,25 @@ function activeWorkoutMinutes(active=enhancements.activeWorkout){
 function consumeActiveWorkoutDuration(planKey){
   const active=enhancements.activeWorkout;if(!active||active.week!==currentWeek-1||active.plan!==planKey)return "";
   const minutes=activeWorkoutMinutes(active);enhancements.activeWorkout=null;persistEnhancements();return minutes;
+}
+
+function restartGuidedWorkout(clearAll=false){
+  const active=enhancements.activeWorkout;if(!active)return;
+  const message=clearAll?
+    "Буде видалено всі ваги, повтори, позначки виконання, вибраний день і запис в історії для цього тренування. Скинути повністю?":
+    "Виконані підходи, таймер, тривалість і запис про завершення буде скинуто. Вага, повтори та вибраний день залишаться. Перезапустити тренування?";
+  if(!window.confirm(message))return;
+  const session=state.weeks[active.week].training[active.plan];
+  session.exercises=session.exercises.map(()=>false);
+  session.done=false;session.completedAt="";session.durationMinutes="";
+  if(clearAll)session.day="";
+  enhancements.weeks[active.week].logs[active.plan].forEach(log=>log.sets.forEach(set=>{
+    set.done=false;
+    if(clearAll){set.weight="";set.reps="";}
+  }));
+  active.index=0;active.startedAt=new Date().toISOString();active.restUntil="";
+  persistEnhancements();persist();renderAll();renderGuidedWorkout();
+  showToast(clearAll?"Дані тренування повністю скинуто.":"Тренування перезапущено.");
 }
 
 function finishGuidedWorkout(){
