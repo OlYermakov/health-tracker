@@ -1,5 +1,5 @@
 const LEGACY_ENHANCEMENTS_KEY="healthTrackerEnhancements_v2";
-const ENHANCEMENTS_VERSION=5;
+const ENHANCEMENTS_VERSION=6;
 const AUTO_PAUSE_MS=5*60*1000;
 const RESET_UNDO_MS=30*60*1000;
 
@@ -54,6 +54,7 @@ function defaultEnhancements(){
     lastBackupAt:"",
     timerSignal:true,
     activeWorkout:null,
+    poolDraft:null,
     history:[],
     archives:[],
     lastResetSnapshot:null,
@@ -111,6 +112,26 @@ function normalizeActiveWorkout(source){
   };
 }
 
+function normalizePoolDraft(source){
+  if(!source||typeof source!=="object")return null;
+  const week=Number(source.week);
+  if(!Number.isInteger(week)||week<0||week>11)return null;
+  return {
+    week,
+    day:source.day===""?"":String(source.day??""),
+    replacesPlan:["A","B"].includes(source.replacesPlan)?source.replacesPlan:"",
+    durationMinutes:String(source.durationMinutes??"").slice(0,3),
+    distanceMeters:String(source.distanceMeters??"").slice(0,5),
+    swimStyle:["crawl","backstroke","aqua","mixed","other"].includes(source.swimStyle)?source.swimStyle:"",
+    intensity:["easy","moderate","hard"].includes(source.intensity)?source.intensity:"",
+    painBeforeLeft:String(source.painBeforeLeft??"").slice(0,2),
+    painBeforeRight:String(source.painBeforeRight??"").slice(0,2),
+    painAfterLeft:String(source.painAfterLeft??"").slice(0,2),
+    painAfterRight:String(source.painAfterRight??"").slice(0,2),
+    notes:String(source.notes??"").slice(0,500)
+  };
+}
+
 function normalizeHistoryExercise(source,planKey,index){
   const exercise=WORKOUT_PLANS[planKey].exercises[index];
   return {
@@ -122,13 +143,15 @@ function normalizeHistoryExercise(source,planKey,index){
 
 function normalizeHistoryRecord(source){
   if(!source||typeof source!=="object")return null;
-  const weekIndex=Number(source.weekIndex),planKey=source.planKey==="B"?"B":"A";
+  const weekIndex=Number(source.weekIndex);
   if(!Number.isInteger(weekIndex)||weekIndex<0||weekIndex>11)return null;
-  const plan=WORKOUT_PLANS[planKey];
+  const kind=source.kind==="pool"||source.activityType==="pool"||source.planKey==="POOL"?"pool":"gym";
+  const planKey=kind==="pool"?"POOL":(source.planKey==="B"?"B":"A");
+  const plan=kind==="gym"?WORKOUT_PLANS[planKey]:null;
   return {
     id:typeof source.id==="string"?source.id:makeId("workout"),
     programId:typeof source.programId==="string"?source.programId:"",
-    weekIndex,planKey,
+    weekIndex,kind,planKey,
     day:source.day===""?"":String(source.day??""),
     startedAt:typeof source.startedAt==="string"?source.startedAt:"",
     completedAt:typeof source.completedAt==="string"?source.completedAt:new Date().toISOString(),
@@ -137,7 +160,12 @@ function normalizeHistoryRecord(source){
     painBeforeRight:String(source.painBeforeRight??"").slice(0,2),
     painAfterLeft:String(source.painAfterLeft??"").slice(0,2),
     painAfterRight:String(source.painAfterRight??"").slice(0,2),
-    exercises:plan.exercises.map((_,index)=>normalizeHistoryExercise(source.exercises?.[index],planKey,index))
+    replacesPlan:["A","B"].includes(source.replacesPlan)?source.replacesPlan:"",
+    distanceMeters:String(source.distanceMeters??"").slice(0,5),
+    swimStyle:["crawl","backstroke","aqua","mixed","other"].includes(source.swimStyle)?source.swimStyle:"",
+    intensity:["easy","moderate","hard"].includes(source.intensity)?source.intensity:"",
+    notes:String(source.notes??"").slice(0,500),
+    exercises:plan?plan.exercises.map((_,index)=>normalizeHistoryExercise(source.exercises?.[index],planKey,index)):[]
   };
 }
 
@@ -169,6 +197,7 @@ function normalizeEnhancements(parsed){
   clean.lastBackupAt=typeof parsed.lastBackupAt==="string"?parsed.lastBackupAt:"";
   clean.timerSignal=parsed.timerSignal!==false;
   clean.activeWorkout=normalizeActiveWorkout(parsed.activeWorkout);
+  clean.poolDraft=normalizePoolDraft(parsed.poolDraft);
   clean.history=Array.isArray(parsed.history)?parsed.history.map(normalizeHistoryRecord).filter(Boolean):[];
   clean.history.forEach(record=>{if(!record.programId)record.programId=clean.programId;});
   clean.archives=Array.isArray(parsed.archives)?parsed.archives.map(normalizeArchive).filter(Boolean):[];
@@ -214,7 +243,7 @@ state.weeks.forEach((week,weekIndex)=>["A","B"].forEach(planKey=>{
   if(enhancements.history.some(record=>record.id===legacyId))return;
   const fallbackDate=programDayDate(weekIndex,session.day)?.toISOString()||new Date().toISOString();
   enhancements.history.push({
-    id:legacyId,programId:enhancements.programId,weekIndex,planKey,day:String(session.day??""),
+    id:legacyId,programId:enhancements.programId,weekIndex,kind:"gym",planKey,day:String(session.day??""),
     startedAt:"",completedAt:session.completedAt||fallbackDate,durationMinutes:String(session.durationMinutes||""),
     painBeforeLeft:"",painBeforeRight:"",painAfterLeft:"",painAfterRight:"",
     exercises:WORKOUT_PLANS[planKey].exercises.map((exercise,index)=>({
@@ -240,6 +269,11 @@ function trainingDayIsTaken(weekIndex,dayIndex,exceptPlan=""){
   const training=state.weeks[weekIndex]?.training;
   return ["A","B"].some(planKey=>planKey!==exceptPlan&&String(training?.[planKey]?.day)===day);
 }
+
+function isPoolRecord(record){return record?.kind==="pool"||record?.planKey==="POOL";}
+
+const SWIM_STYLE_LABELS={crawl:"Кроль",backstroke:"На спині",aqua:"Акваходьба",mixed:"Змішано",other:"Інше"};
+const INTENSITY_LABELS={easy:"Легка",moderate:"Помірна",hard:"Висока"};
 
 function showToast(message){
   const toast=document.getElementById("appToast");
@@ -468,8 +502,12 @@ function renderToday(){
     return `<button class="today-habit ${on?"on":""}" type="button" onclick="toggleTodayHabit(${weekIndex},${dayIndex},'${key}')" aria-pressed="${on}"><span>${on?"✓":"○"}</span>${label}</button>`;
   }).join("");
   const completedToday=completedTrainingRecordsForWeek(weekIndex).filter(record=>Number(record.day)===dayIndex);
-  const planned=["A","B"].filter(planKey=>String(week.training[planKey].day)===String(dayIndex)&&!completedToday.some(record=>record.planKey===planKey));
+  const planned=["A","B"].filter(planKey=>String(week.training[planKey].day)===String(dayIndex)&&!completedToday.some(record=>record.planKey===planKey)&&!(enhancements.poolDraft?.week===weekIndex&&Number(enhancements.poolDraft.day)===dayIndex&&enhancements.poolDraft.replacesPlan===planKey));
   const completedHTML=completedToday.map(record=>{
+    if(isPoolRecord(record)){
+      const details=[record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"",record.distanceMeters?`${escapeNote(record.distanceMeters)} м`:"",SWIM_STYLE_LABELS[record.swimStyle]||""].filter(Boolean).join(" · ");
+      return `<div class="today-workout done pool"><div><span>Завершено</span><strong>Басейн${record.replacesPlan?` · замість ${record.replacesPlan}`:""}</strong><small>${details||"Тренування у воді"}</small></div><button type="button" onclick="openHistorySession(${weekIndex},'POOL')">Переглянути</button></div>`;
+    }
     const done=record.exercises.filter(exercise=>exercise.sets.length&&exercise.sets.every(set=>set.done)).length;
     return `<div class="today-workout done"><div><span>Завершено</span><strong>Тренування ${record.planKey}</strong><small>${done} / ${WORKOUT_PLANS[record.planKey].exercises.length} вправ · ${escapeNote(record.durationMinutes||"—")} хв</small></div><button type="button" onclick="openTodayWorkout(${weekIndex},'${record.planKey}',false)">Переглянути</button></div>`;
   }).join("");
@@ -477,13 +515,15 @@ function renderToday(){
     const session=week.training[planKey],completed=session.exercises.filter(Boolean).length;
     return `<div class="today-workout"><div><span>Заплановано сьогодні</span><strong>Тренування ${planKey}</strong><small>${completed} / ${WORKOUT_PLANS[planKey].exercises.length} вправ</small></div><button type="button" onclick="openTodayWorkout(${weekIndex},'${planKey}',true)">Почати</button></div>`;
   }).join("");
-  const workoutHTML=completedHTML||plannedHTML?completedHTML+plannedHTML:`<div class="today-no-workout"><span>Сьогодні тренування не заплановане.</span><button type="button" onclick="openTodayWorkout(${weekIndex},'A',false)">Відкрити програму</button></div>`;
+  const poolDraftHTML=enhancements.poolDraft?.week===weekIndex&&Number(enhancements.poolDraft.day)===dayIndex?
+    `<div class="today-workout pool"><div><span>Чернетка</span><strong>Басейн</strong><small>Заповни результати після відвідування</small></div><button type="button" onclick="openPoolSession(${weekIndex})">Відкрити</button></div>`:"";
+  const workoutHTML=completedHTML||plannedHTML||poolDraftHTML?completedHTML+plannedHTML+poolDraftHTML:`<div class="today-no-workout"><span>Сьогодні тренування не заплановане.</span><button type="button" onclick="openTodayWorkout(${weekIndex},'A',false)">Відкрити програму</button></div>`;
   content.innerHTML=`<div class="today-context"><strong>${days[dayIndex].name} · тиждень ${weekIndex+1}</strong><span>Швидко відміть головне на сьогодні</span></div><div class="today-grid">${habitButtons}</div><div class="today-workouts">${workoutHTML}</div>`;
 }
 
 function toggleTodayHabit(weekIndex,dayIndex,key){
   const week=state.weeks[weekIndex];
-  if(key==="activity"&&completedSessionOnDay(week,dayIndex)){showToast("Цей день уже зараховано завершеним тренуванням A або B.");return;}
+  if(key==="activity"&&completedSessionOnDay(week,dayIndex)){showToast("Цей день уже зараховано завершеним тренуванням або басейном.");return;}
   week.days[dayIndex][key]=!week.days[dayIndex][key];persist();
   if(currentWeek===weekIndex+1)renderAll();else{renderToday();renderSummary();}
 }
@@ -508,6 +548,19 @@ function renderHistory(){
   if(!records.length){list.innerHTML=`<div class="history-empty"><strong>Історія поки порожня</strong><span>Завершене тренування автоматично з’явиться тут разом із підходами та тривалістю.</span></div>`;return;}
   const dateFormat=new Intl.DateTimeFormat("uk-UA",{day:"numeric",month:"long",year:"numeric"});
   list.innerHTML=records.map(record=>{
+    const before=Math.max(Number(record.painBeforeLeft||0),Number(record.painBeforeRight||0));
+    const after=Math.max(Number(record.painAfterLeft||0),Number(record.painAfterRight||0));
+    const pain=(record.painBeforeLeft!==""||record.painBeforeRight!==""||record.painAfterLeft!==""||record.painAfterRight!=="")?`<span class="${after>=4?"pain-high":""}">Коліна: ${before}/10 → ${after}/10</span>`:"";
+    if(isPoolRecord(record)){
+      const poolDetails=[
+        record.swimStyle?`Стиль: ${SWIM_STYLE_LABELS[record.swimStyle]}`:"",
+        record.intensity?`Інтенсивність: ${INTENSITY_LABELS[record.intensity]}`:"",
+        record.distanceMeters?`Дистанція: ${escapeNote(record.distanceMeters)} м`:"",
+        record.replacesPlan?`Замість тренування ${record.replacesPlan}`:""
+      ].filter(Boolean).map(text=>`<li><span>${text}</span></li>`).join("");
+      const notes=record.notes?`<p class="history-pool-note">${escapeNote(record.notes)}</p>`:"";
+      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'POOL')">Відкрити тиждень ${record.weekIndex+1}</button></article>`;
+    }
     const plan=WORKOUT_PLANS[record.planKey];
     const completed=record.exercises.filter(exercise=>exercise.sets.length&&exercise.sets.every(set=>set.done)).length;
     const rows=plan.exercises.map((exercise,index)=>{
@@ -516,15 +569,111 @@ function renderHistory(){
       if(!snapshot?.sets?.some(set=>set.weight||set.reps||set.done))return "";
       return `<li><span>${escapeNote(exercise.name)}</span><strong>${escapeNote(snapshot.sets.map(set=>formatSet(set,record.planKey,index)).join(" · ")||"Виконано")}</strong></li>`;
     }).join("");
-    const before=Math.max(Number(record.painBeforeLeft||0),Number(record.painBeforeRight||0));
-    const after=Math.max(Number(record.painAfterLeft||0),Number(record.painAfterRight||0));
-    const pain=(record.painBeforeLeft!==""||record.painBeforeRight!==""||record.painAfterLeft!==""||record.painAfterRight!=="")?`<span class="${after>=4?"pain-high":""}">Коліна: ${before}/10 → ${after}/10</span>`:"";
     return `<article class="history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>Тренування ${record.planKey}</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span><span>${completed} / ${plan.exercises.length} вправ</span>${pain}</div></div><details><summary>Показати результати</summary><ul>${rows||"<li><span>Результати підходів не записані</span></li>"}</ul></details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'${record.planKey}')">Відкрити тиждень ${record.weekIndex+1}</button></article>`;
   }).join("");
 }
 
 function openHistorySession(weekIndex,planKey){
-  currentWeek=weekIndex+1;currentPlan=planKey;renderAll();document.getElementById("training")?.scrollIntoView({behavior:"smooth",block:"start"});
+  currentWeek=weekIndex+1;if(planKey!=="POOL")currentPlan=planKey;renderAll();document.getElementById(planKey==="POOL"?"trainingHistory":"training")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function blankPoolDraft(weekIndex=currentWeek-1){
+  return {week:weekIndex,day:"",replacesPlan:"",durationMinutes:"",distanceMeters:"",swimStyle:"",intensity:"",painBeforeLeft:"",painBeforeRight:"",painAfterLeft:"",painAfterRight:"",notes:""};
+}
+
+function poolDraftHasValues(draft){
+  return Boolean(draft&&Object.entries(draft).some(([key,value])=>key!=="week"&&value!==""));
+}
+
+function poolDayIsTaken(draft,dayIndex){
+  const day=String(dayIndex),week=state.weeks[draft.week];
+  if(completedTrainingRecordsForWeek(draft.week).some(record=>String(record.day)===day))return true;
+  return ["A","B"].some(planKey=>planKey!==draft.replacesPlan&&String(week.training[planKey].day)===day);
+}
+
+function poolDayOptions(draft){
+  return `<option value="">Обери день</option>`+days.map((day,index)=>{
+    const occupied=poolDayIsTaken(draft,index)&&String(draft.day)!==String(index);
+    return `<option value="${index}" ${String(draft.day)===String(index)?"selected":""} ${occupied?"disabled":""}>${day.name}${occupied?" · вже є тренування":""}</option>`;
+  }).join("");
+}
+
+function openPoolSession(weekIndex=currentWeek-1){
+  if(enhancements.activeWorkout){showToast("Спочатку заверши або скинь активне тренування A/B.");return;}
+  const targetWeek=Number.isInteger(Number(weekIndex))?Math.max(0,Math.min(11,Number(weekIndex))):currentWeek-1;
+  if(enhancements.poolDraft&&enhancements.poolDraft.week!==targetWeek&&poolDraftHasValues(enhancements.poolDraft)&&!window.confirm("Є незавершена чернетка басейну для іншого тижня. Очистити її та створити нову?"))return;
+  if(!enhancements.poolDraft||enhancements.poolDraft.week!==targetWeek)enhancements.poolDraft=blankPoolDraft(targetWeek);
+  currentWeek=targetWeek+1;persistEnhancements();renderAll();renderPoolSession();
+  const dialog=document.getElementById("poolSessionDialog");document.body.classList.add("pool-open");
+  if(dialog&&!dialog.open){if(typeof dialog.showModal==="function")dialog.showModal();else dialog.setAttribute("open","");}
+}
+
+function renderPoolSession(){
+  const draft=enhancements.poolDraft,content=document.getElementById("poolSessionContent");if(!draft||!content)return;
+  const before=Math.max(Number(draft.painBeforeLeft||0),Number(draft.painBeforeRight||0));
+  const after=Math.max(Number(draft.painAfterLeft||0),Number(draft.painAfterRight||0));
+  const maxPain=Math.max(before,after);
+  const painWarning=maxPain>=4?`<div class="pool-pain-warning">${maxPain>=7?"Сильний біль: припини навантаження та обговори стан із лікарем або фізіотерапевтом.":"Коліна реагують на навантаження. Обирай спокійний темп, кроль, плавання на спині або акваходьбу."}</div>`:"";
+  document.getElementById("poolWeekLabel").textContent=`Басейн · тиждень ${draft.week+1}`;
+  content.innerHTML=`
+    <div class="pool-intro"><div aria-hidden="true">🏊</div><div><h2>Запис тренування у басейні</h2><p>Басейн зарахується як одне з двох тренувань тижня і як активність цього дня.</p></div></div>
+    <div class="pool-form-grid">
+      <label><span>Що замінює?</span><select onchange="updatePoolDraft('replacesPlan',this.value)"><option value="" ${draft.replacesPlan===""?"selected":""}>Окреме тренування</option><option value="A" ${draft.replacesPlan==="A"?"selected":""}>Замість тренування A</option><option value="B" ${draft.replacesPlan==="B"?"selected":""}>Замість тренування B</option></select></label>
+      <label><span>День</span><select id="poolDay" onchange="updatePoolDraft('day',this.value)">${poolDayOptions(draft)}</select></label>
+      <label><span>Тривалість, хв</span><input type="number" inputmode="numeric" min="5" max="240" step="1" value="${escapeNote(draft.durationMinutes)}" placeholder="Напр. 40" oninput="updatePoolDraft('durationMinutes',this.value)"></label>
+      <label><span>Дистанція, м · необов’язково</span><input type="number" inputmode="numeric" min="0" max="20000" step="25" value="${escapeNote(draft.distanceMeters)}" placeholder="Напр. 800" oninput="updatePoolDraft('distanceMeters',this.value)"></label>
+      <label><span>Вид активності</span><select onchange="updatePoolDraft('swimStyle',this.value)"><option value="">Обери</option>${Object.entries(SWIM_STYLE_LABELS).map(([value,label])=>`<option value="${value}" ${draft.swimStyle===value?"selected":""}>${label}</option>`).join("")}</select></label>
+      <label><span>Інтенсивність</span><select onchange="updatePoolDraft('intensity',this.value)"><option value="">Обери</option>${Object.entries(INTENSITY_LABELS).map(([value,label])=>`<option value="${value}" ${draft.intensity===value?"selected":""}>${label}</option>`).join("")}</select></label>
+    </div>
+    <div class="pool-knee-panel"><div><strong>Коліна до і після</strong><span>0 — болю немає, 10 — найсильніший біль</span></div><div class="pool-pain-grid"><label>Ліве · до<select onchange="updatePoolDraft('painBeforeLeft',this.value)">${painOptions(draft.painBeforeLeft)}</select></label><label>Праве · до<select onchange="updatePoolDraft('painBeforeRight',this.value)">${painOptions(draft.painBeforeRight)}</select></label><label>Ліве · після<select onchange="updatePoolDraft('painAfterLeft',this.value)">${painOptions(draft.painAfterLeft)}</select></label><label>Праве · після<select onchange="updatePoolDraft('painAfterRight',this.value)">${painOptions(draft.painAfterRight)}</select></label></div>${painWarning}</div>
+    <div class="pool-safety-note"><strong>Для колін</strong><span>Віддавай перевагу кролю, плаванню на спині або акваходьбі. Якщо «жаб’ячий» рух ногами під час брасу викликає дискомфорт — не використовуй його.</span></div>
+    <label class="pool-notes"><span>Нотатка · необов’язково</span><textarea maxlength="500" rows="3" placeholder="Самопочуття, темп або що змінити наступного разу" oninput="updatePoolDraft('notes',this.value)">${escapeNote(draft.notes)}</textarea></label>
+    <footer class="pool-actions"><button class="pool-reset" type="button" onclick="resetPoolDraft()">Очистити</button><button class="pool-save" type="button" onclick="savePoolSession()">Зарахувати басейн</button></footer>`;
+}
+
+function updatePoolDraft(key,value){
+  const draft=enhancements.poolDraft;
+  const allowed=["day","replacesPlan","durationMinutes","distanceMeters","swimStyle","intensity","painBeforeLeft","painBeforeRight","painAfterLeft","painAfterRight","notes"];
+  if(!draft||!allowed.includes(key))return;
+  draft[key]=String(value).slice(0,key==="notes"?500:20);
+  if(key==="replacesPlan"&&draft.day!==""&&poolDayIsTaken(draft,draft.day))draft.day="";
+  persistEnhancements();
+  if(["replacesPlan","painBeforeLeft","painBeforeRight","painAfterLeft","painAfterRight"].includes(key))renderPoolSession();
+}
+
+function resetPoolDraft(){
+  const draft=enhancements.poolDraft;if(!draft)return;
+  if(poolDraftHasValues(draft)&&!window.confirm("Очистити всі введені дані басейну?"))return;
+  enhancements.poolDraft=blankPoolDraft(draft.week);persistEnhancements();renderPoolSession();showToast("Чернетку басейну очищено.");
+}
+
+function savePoolSession(){
+  const draft=enhancements.poolDraft;if(!draft)return;
+  const duration=Number(draft.durationMinutes),distance=draft.distanceMeters===""?null:Number(draft.distanceMeters);
+  if(draft.day===""){showToast("Обери день відвідування басейну.");document.getElementById("poolDay")?.focus();return;}
+  if(poolDayIsTaken(draft,draft.day)){showToast("На цей день уже записане інше тренування.");return;}
+  if(!Number.isFinite(duration)||duration<5||duration>240){showToast("Вкажи тривалість від 5 до 240 хвилин.");return;}
+  if(distance!==null&&(!Number.isFinite(distance)||distance<0||distance>20000)){showToast("Вкажи дистанцію від 0 до 20 000 метрів.");return;}
+  if(!draft.swimStyle){showToast("Обери вид активності у басейні.");return;}
+  if(!draft.intensity){showToast("Обери інтенсивність тренування.");return;}
+  const completedAt=new Date().toISOString();
+  enhancements.history.push({
+    id:makeId("pool"),programId:enhancements.programId,weekIndex:draft.week,kind:"pool",planKey:"POOL",day:String(draft.day),
+    startedAt:"",completedAt,durationMinutes:String(duration),distanceMeters:distance===null?"":String(distance),swimStyle:draft.swimStyle,intensity:draft.intensity,
+    replacesPlan:draft.replacesPlan,painBeforeLeft:draft.painBeforeLeft,painBeforeRight:draft.painBeforeRight,painAfterLeft:draft.painAfterLeft,painAfterRight:draft.painAfterRight,
+    notes:draft.notes,exercises:[]
+  });
+  if(draft.replacesPlan){
+    const replaced=state.weeks[draft.week].training[draft.replacesPlan];
+    if(!replaced.done)replaced.day="";
+  }
+  enhancements.poolDraft=null;persistEnhancements();persist();closePoolSession();renderAll();showToast("Басейн зараховано як тренування.");
+}
+
+function closePoolSession(){
+  const dialog=document.getElementById("poolSessionDialog");
+  if(dialog?.open&&typeof dialog.close==="function")dialog.close();else dialog?.removeAttribute("open");
+  document.body.classList.remove("pool-open");renderTraining();
 }
 
 function guidedWorkoutButtonLabel(planKey){
@@ -710,7 +859,7 @@ function finishGuidedWorkout(){
   const completedAt=new Date().toISOString(),durationMinutes=activeWorkoutMinutes(active);
   session.done=true;session.completedAt=completedAt;session.durationMinutes=durationMinutes;
   enhancements.history.push({
-    id:makeId("workout"),programId:enhancements.programId,weekIndex:active.week,planKey:active.plan,day:String(session.day),
+    id:makeId("workout"),programId:enhancements.programId,weekIndex:active.week,kind:"gym",planKey:active.plan,day:String(session.day),
     startedAt:active.startedAt,completedAt,durationMinutes:String(durationMinutes),
     painBeforeLeft:active.painBeforeLeft,painBeforeRight:active.painBeforeRight,painAfterLeft:active.painAfterLeft,painAfterRight:active.painAfterRight,
     exercises:WORKOUT_PLANS[active.plan].exercises.map((exercise,index)=>({name:exercise.name,...cloneData(exerciseLog(active.week,active.plan,index))}))
@@ -791,7 +940,7 @@ function archiveCurrentProgram(){
   });
   state=defaultState();dayNotes=emptyNotes();currentWeek=1;currentPlan="A";
   enhancements.programId=makeId("program");enhancements.startDate=localISODate(currentWeekMonday());
-  enhancements.weeks=Array.from({length:12},blankEnhancementWeek);enhancements.activeWorkout=null;enhancements.lastResetSnapshot=null;
+  enhancements.weeks=Array.from({length:12},blankEnhancementWeek);enhancements.activeWorkout=null;enhancements.poolDraft=null;enhancements.lastResetSnapshot=null;
   migrateUnifiedStore();closeGuidedWorkout();renderAll();window.scrollTo({top:0,behavior:"smooth"});showToast("Програму архівовано. Нова 12-тижнева програма готова.");
 }
 
@@ -842,6 +991,9 @@ guidedDialog.addEventListener("close",()=>document.body.classList.remove("guided
 guidedDialog.addEventListener("pointerdown",touchActiveWorkout,{passive:true});
 guidedDialog.addEventListener("input",touchActiveWorkout,{passive:true});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")autoPauseIfIdle();});
+const poolDialog=document.getElementById("poolSessionDialog");
+poolDialog.addEventListener("cancel",event=>{event.preventDefault();closePoolSession();});
+poolDialog.addEventListener("close",()=>document.body.classList.remove("pool-open"));
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 
