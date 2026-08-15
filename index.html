@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=8" />
-<link rel="stylesheet" href="training.css?v=8" />
-<link rel="stylesheet" href="notes.css?v=8" />
-<link rel="stylesheet" href="exercise-details.css?v=8" />
-<link rel="stylesheet" href="enhancements.css?v=8" />
+<link rel="stylesheet" href="style.css?v=9" />
+<link rel="stylesheet" href="training.css?v=9" />
+<link rel="stylesheet" href="notes.css?v=9" />
+<link rel="stylesheet" href="exercise-details.css?v=9" />
+<link rel="stylesheet" href="enhancements.css?v=9" />
 </head>
 <body>
 <div class="shell">
@@ -204,8 +204,12 @@
   <div class="footer-note">Дані зберігаються локально у цьому браузері. Періодично завантажуй резервну копію. Це не медичний застосунок і не замінює консультацію лікаря.</div>
 </div>
 <div class="toast" id="appToast" role="status" aria-live="polite"></div>
-<script src="app.js?v=8"></script>
-<script src="exercise-details.js?v=8"></script>
-<script src="enhancements.js?v=8"></script>
+<dialog class="exercise-image-dialog" id="exerciseImageDialog" onclick="if(event.target===this)closeExerciseImage()">
+  <button class="exercise-image-close" type="button" onclick="closeExerciseImage()" aria-label="Закрити">×</button>
+  <figure><img src="" alt=""><figcaption></figcaption></figure>
+</dialog>
+<script src="app.js?v=9"></script>
+<script src="exercise-details.js?v=9"></script>
+<script src="enhancements.js?v=9"></script>
 </body>
 </html>

@@ -1,8 +1,12 @@
-const CACHE_NAME="health-tracker-v8";
+const CACHE_NAME="health-tracker-v9";
 const APP_SHELL=[
-  "./","./index.html","./style.css?v=8","./training.css?v=8","./notes.css?v=8",
-  "./exercise-details.css?v=8","./enhancements.css?v=8","./app.js?v=8",
-  "./exercise-details.js?v=8","./enhancements.js?v=8","./manifest.webmanifest","./icon.svg"
+  "./","./index.html","./style.css?v=9","./training.css?v=9","./notes.css?v=9",
+  "./exercise-details.css?v=9","./enhancements.css?v=9","./app.js?v=9",
+  "./exercise-details.js?v=9","./enhancements.js?v=9","./manifest.webmanifest","./icon.svg",
+  "./assets/exercises/stationary-bike.webp","./assets/exercises/chest-press.webp","./assets/exercises/seated-row.webp",
+  "./assets/exercises/leg-curl.webp","./assets/exercises/leg-press.webp","./assets/exercises/hip-thrust.webp",
+  "./assets/exercises/pallof-press.webp","./assets/exercises/elliptical.webp","./assets/exercises/lat-pulldown.webp",
+  "./assets/exercises/shoulder-press.webp","./assets/exercises/hip-abduction.webp","./assets/exercises/face-pull.webp"
 ];
 
 self.addEventListener("install",event=>{

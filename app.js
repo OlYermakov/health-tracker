@@ -14,13 +14,13 @@ const WORKOUT_PLANS = {
     subtitle:"База + корпус",
     goal:"Спокійне тренування всього тіла з контрольованим навантаженням на коліна.",
     exercises:[
-      {name:"Велотренажер", dose:"5–7 хв", tag:"Розминка", note:"Легкий опір, рівний темп. Мета — розігрітися, а не втомитися."},
-      {name:"Жим від грудей у тренажері", dose:"2 × 10–12", tag:"Груди", note:"Лопатки притиснуті, рух плавний. Залишай приблизно 3 повторення в запасі."},
-      {name:"Горизонтальна тяга сидячи", dose:"2 × 10–12", tag:"Спина", note:"Тягни ліктями назад без ривка, корпус стабільний."},
-      {name:"Згинання ніг у тренажері", dose:"2 × 10–12", tag:"Ноги", note:"Повільно, без ривків. Якщо коліно реагує дискомфортом — зменш амплітуду або вагу."},
-      {name:"Жим ногами — неглибока амплітуда", dose:"2 × 8–10", tag:"Ноги", note:"Стопи стабільно, коліна по лінії стоп. Не опускай платформу глибоко; працюй тільки без болю."},
-      {name:"Ягодичний міст / hip thrust", dose:"2 × 10–12", tag:"Сідниці", note:"Піднімай таз за рахунок сідниць, не прогинай поперек."},
-      {name:"Pallof press", dose:"2 × 10 / сторона", tag:"Корпус", note:"Корпус не розвертай. Рух руками повільний і контрольований."}
+      {name:"Велотренажер", image:"stationary-bike.webp", dose:"5–7 хв", tag:"Розминка", note:"Легкий опір, рівний темп. Мета — розігрітися, а не втомитися."},
+      {name:"Жим від грудей у тренажері", image:"chest-press.webp", dose:"2 × 10–12", tag:"Груди", note:"Лопатки притиснуті, рух плавний. Залишай приблизно 3 повторення в запасі."},
+      {name:"Горизонтальна тяга сидячи", image:"seated-row.webp", dose:"2 × 10–12", tag:"Спина", note:"Тягни ліктями назад без ривка, корпус стабільний."},
+      {name:"Згинання ніг у тренажері", image:"leg-curl.webp", dose:"2 × 10–12", tag:"Ноги", note:"Повільно, без ривків. Якщо коліно реагує дискомфортом — зменш амплітуду або вагу."},
+      {name:"Жим ногами — неглибока амплітуда", image:"leg-press.webp", dose:"2 × 8–10", tag:"Ноги", note:"Стопи стабільно, коліна по лінії стоп. Не опускай платформу глибоко; працюй тільки без болю."},
+      {name:"Ягодичний міст / hip thrust", image:"hip-thrust.webp", dose:"2 × 10–12", tag:"Сідниці", note:"Піднімай таз за рахунок сідниць, не прогинай поперек."},
+      {name:"Pallof press", image:"pallof-press.webp", dose:"2 × 10 / сторона", tag:"Корпус", note:"Корпус не розвертай. Рух руками повільний і контрольований."}
     ]
   },
   B: {
@@ -28,13 +28,13 @@ const WORKOUT_PLANS = {
     subtitle:"Спина + плечі",
     goal:"Другий повнотілий день з іншим акцентом, але тією ж щадною логікою для колін.",
     exercises:[
-      {name:"Велотренажер або еліпс", dose:"5–7 хв", tag:"Розминка", note:"Легкий опір. Якщо еліпс неприємний для колін — обирай велотренажер."},
-      {name:"Вертикальна тяга до грудей", dose:"2 × 10–12", tag:"Спина", note:"Тягни до верхньої частини грудей, не відхиляй корпус назад."},
-      {name:"Жим плечима у тренажері", dose:"2 × 10–12", tag:"Плечі", note:"Починай з легкої ваги, не піднімай плечі до вух."},
-      {name:"Згинання ніг у тренажері", dose:"2 × 10–12", tag:"Ноги", note:"Контрольований темп; навантаження має відчуватися в задній поверхні стегна."},
-      {name:"Жим ногами — неглибока амплітуда", dose:"2 × 8–10", tag:"Ноги", note:"Без глибокого згинання коліна. Якщо некомфортно — пропусти вправу та обговори альтернативу з фізіотерапевтом."},
-      {name:"Відведення стегон у тренажері", dose:"2 × 12–15", tag:"Сідниці", note:"Без розгойдування корпусу, пауза в кінцевій точці."},
-      {name:"Face pull / тяга каната до обличчя", dose:"2 × 12–15", tag:"Плечі", note:"Лікті трохи вище кистей, рух легкий і контрольований."}
+      {name:"Велотренажер або еліпс", image:"elliptical.webp", dose:"5–7 хв", tag:"Розминка", note:"Легкий опір. Якщо еліпс неприємний для колін — обирай велотренажер."},
+      {name:"Вертикальна тяга до грудей", image:"lat-pulldown.webp", dose:"2 × 10–12", tag:"Спина", note:"Тягни до верхньої частини грудей, не відхиляй корпус назад."},
+      {name:"Жим плечима у тренажері", image:"shoulder-press.webp", dose:"2 × 10–12", tag:"Плечі", note:"Починай з легкої ваги, не піднімай плечі до вух."},
+      {name:"Згинання ніг у тренажері", image:"leg-curl.webp", dose:"2 × 10–12", tag:"Ноги", note:"Контрольований темп; навантаження має відчуватися в задній поверхні стегна."},
+      {name:"Жим ногами — неглибока амплітуда", image:"leg-press.webp", dose:"2 × 8–10", tag:"Ноги", note:"Без глибокого згинання коліна. Якщо некомфортно — пропусти вправу та обговори альтернативу з фізіотерапевтом."},
+      {name:"Відведення стегон у тренажері", image:"hip-abduction.webp", dose:"2 × 12–15", tag:"Сідниці", note:"Без розгойдування корпусу, пауза в кінцевій точці."},
+      {name:"Face pull / тяга каната до обличчя", image:"face-pull.webp", dose:"2 × 12–15", tag:"Плечі", note:"Лікті трохи вище кистей, рух легкий і контрольований."}
     ]
   }
 };
@@ -278,9 +278,17 @@ function renderTraining(){
       <button class="exercise-check ${session.exercises[i]?'on':''}" type="button" onclick="toggleExercise('${currentPlan}',${i})" aria-label="${session.exercises[i]?'Виконано':'Позначити виконаним'}">✓</button>
       <div class="exercise-number">${String(i+1).padStart(2,'0')}</div>
       <div class="exercise-main">
-        <div class="exercise-meta"><span>${ex.tag}</span><strong>${ex.dose}</strong></div>
-        <h3>${ex.name}</h3>
-        <p>${ex.note}</p>
+        <div class="exercise-overview">
+          <button class="exercise-visual" type="button" onclick="openExerciseImage('${currentPlan}',${i})" aria-label="Збільшити зображення: ${ex.name}">
+            <img src="assets/exercises/${ex.image}" alt="Людина виконує вправу «${ex.name}»" width="720" height="720" loading="lazy">
+            <span aria-hidden="true">⌕</span>
+          </button>
+          <div class="exercise-copy">
+            <div class="exercise-meta"><span>${ex.tag}</span><strong>${ex.dose}</strong></div>
+            <h3>${ex.name}</h3>
+            <p>${ex.note}</p>
+          </div>
+        </div>
       </div>
     </article>`).join("");
   const actionText=session.done?"Тренування зараховано ✓":"Зарахувати тренування";
@@ -309,6 +317,18 @@ function renderTraining(){
   if(typeof injectExerciseTechnique==="function")injectExerciseTechnique();
   if(typeof injectExerciseLogs==="function")injectExerciseLogs();
 }
+function openExerciseImage(planKey,index){
+  const exercise=WORKOUT_PLANS[planKey]?.exercises?.[index];
+  const dialog=document.getElementById("exerciseImageDialog");
+  if(!exercise||!dialog)return;
+  const image=dialog.querySelector("img");
+  image.src=`assets/exercises/${exercise.image}`;
+  image.alt=`Людина виконує вправу «${exercise.name}»`;
+  dialog.querySelector("figcaption").textContent=exercise.name;
+  if(typeof dialog.showModal==="function")dialog.showModal();
+  else dialog.setAttribute("open","");
+}
+function closeExerciseImage(){document.getElementById("exerciseImageDialog")?.close();}
 function toggleExercise(planKey,index){
   const session=state.weeks[currentWeek-1].training[planKey];
   session.exercises[index]=!session.exercises[index];
