@@ -11,11 +11,11 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=20" />
-<link rel="stylesheet" href="training.css?v=20" />
-<link rel="stylesheet" href="notes.css?v=20" />
-<link rel="stylesheet" href="exercise-details.css?v=20" />
-<link rel="stylesheet" href="enhancements.css?v=20" />
+<link rel="stylesheet" href="style.css?v=21" />
+<link rel="stylesheet" href="training.css?v=21" />
+<link rel="stylesheet" href="notes.css?v=21" />
+<link rel="stylesheet" href="exercise-details.css?v=21" />
+<link rel="stylesheet" href="enhancements.css?v=21" />
 </head>
 <body>
 <div class="shell">
@@ -36,20 +36,27 @@
   </details>
   <input id="backupFile" type="file" accept="application/json,.json" hidden />
 
-  <nav class="section-nav glass" aria-label="Навігація">
-    <a href="#tracker">Тиждень</a>
-    <a href="#training">Тренування</a>
-    <a href="#progress">Прогрес</a>
+  <nav class="section-nav glass" aria-label="Основні розділи">
+    <a href="#today" data-app-screen="today" aria-current="page"><span class="section-nav-icon" aria-hidden="true">⌂</span><span>Сьогодні</span></a>
+    <a href="#tracker" data-app-screen="week"><span class="section-nav-icon" aria-hidden="true">▦</span><span>Тиждень</span></a>
+    <a href="#training" data-app-screen="training"><span class="section-nav-icon" aria-hidden="true">◆</span><span>Тренування</span></a>
+    <a href="#progress" data-app-screen="progress"><span class="section-nav-icon" aria-hidden="true">↗</span><span>Прогрес</span></a>
+    <a href="#more" data-app-screen="more"><span class="section-nav-icon" aria-hidden="true">•••</span><span>Ще</span></a>
   </nav>
 
-  <main id="tracker">
-    <section class="today-panel glass" id="todayPanel" aria-labelledby="todayTitle">
-      <div class="today-heading">
-        <div><div class="eyebrow">Швидкий доступ</div><h2 id="todayTitle">Сьогодні</h2></div>
-        <div class="today-date" id="todayDate"></div>
-      </div>
-      <div id="todayContent"></div>
-    </section>
+  <main class="app-screens">
+    <div class="mobile-screen is-active" id="today" data-mobile-screen="today">
+      <section class="today-panel glass" id="todayPanel" aria-labelledby="todayTitle">
+        <div class="today-heading">
+          <div><div class="eyebrow">Швидкий доступ</div><h2 id="todayTitle">Сьогодні</h2></div>
+          <div class="today-date" id="todayDate"></div>
+        </div>
+        <div id="todayContent"></div>
+      </section>
+    </div>
+
+    <div class="mobile-screen" id="tracker" data-mobile-screen="week">
+      <div class="mobile-screen-heading"><div class="eyebrow">Огляд</div><h2>Поточний тиждень</h2></div>
 
     <section class="program-settings glass" aria-labelledby="programSettingsTitle">
       <div>
@@ -135,7 +142,7 @@
       </aside>
     </section>
 
-    <section class="wellbeing-panel glass" aria-labelledby="wellbeingTitle">
+      <section class="wellbeing-panel glass" aria-labelledby="wellbeingTitle">
       <div>
         <div class="eyebrow">Контроль навантаження</div>
         <h2 id="wellbeingTitle">Самопочуття цього тижня</h2>
@@ -148,10 +155,11 @@
         <div class="wellbeing-summary-card"><span>Повнота даних</span><strong id="weeklyWellbeingCoverage">0%</strong><small>усі 4 показники за день</small></div>
       </div>
       <div class="pain-warning" id="painWarning" hidden></div>
-    </section>
-  </main>
+      </section>
+    </div>
 
-  <section class="training-section glass" id="training">
+    <div class="mobile-screen" id="training-screen" data-mobile-screen="training">
+      <section class="training-section glass" id="training">
     <div class="training-head">
       <div>
         <div class="eyebrow">Програма залу</div>
@@ -176,17 +184,20 @@
     </div>
 
     <div id="workoutPlan" role="tabpanel"></div>
-  </section>
+      </section>
 
-  <section class="history-section glass" id="trainingHistory" aria-labelledby="historyTitle">
+      <section class="history-section glass" id="trainingHistory" aria-labelledby="historyTitle">
     <div class="history-heading">
       <div><div class="eyebrow">Журнал</div><h2 id="historyTitle">Історія тренувань</h2></div>
       <div class="history-heading-meta"><button id="undoHistoryChange" type="button" onclick="undoHistoryChange()" hidden>↶ Скасувати зміну</button><span id="historyCount">0 записів</span></div>
     </div>
     <div class="history-list" id="historyList"></div>
-  </section>
+      </section>
+    </div>
 
-  <section class="layout" id="progress">
+    <div class="mobile-screen" id="progress-screen" data-mobile-screen="progress">
+      <div class="mobile-screen-heading"><div class="eyebrow">Аналітика</div><h2>Прогрес</h2></div>
+      <section class="layout" id="progress">
     <div class="panel glass">
       <h2>Динаміка ваги</h2>
       <canvas class="chart" id="weightChart" role="img" aria-describedby="weightChartSummary"></canvas>
@@ -199,9 +210,9 @@
       <p class="visually-hidden" id="completionChartSummary">Виконання за тижнями ще не заповнене.</p>
       <div class="legend"><span><i class="dot" style="background:var(--cyan)"></i>відсоток виконання</span></div>
     </div>
-  </section>
+      </section>
 
-  <section class="summary-section glass" aria-labelledby="summaryTitle">
+      <section class="summary-section glass" aria-labelledby="summaryTitle">
     <div class="eyebrow">Підсумок</div>
     <h2 id="summaryTitle">Результат програми</h2>
     <div class="summary-grid">
@@ -217,19 +228,44 @@
       <button type="button" onclick="archiveCurrentProgram()">Архівувати й почати нову</button>
     </div>
     <div id="programArchiveList"></div>
-  </section>
-
-  <section class="panel glass" style="margin-top:18px">
-    <h2>Швидкі варіанти сніданку</h2>
-    <div class="tips breakfast-grid">
-      <div class="tip">2–3 яйця + 1 булочка</div>
-      <div class="tip">200–250 г творогу + 1 булочка</div>
-      <div class="tip">Грецький йогурт без цукру + 1 булочка</div>
-      <div class="tip">Протеїновий напій + банан</div>
+      </section>
     </div>
-  </section>
 
-  <div class="footer-note">Дані зберігаються локально у цьому браузері. Періодично завантажуй резервну копію. Це не медичний застосунок і не замінює консультацію лікаря.</div>
+    <div class="mobile-screen" id="more" data-mobile-screen="more">
+      <div class="mobile-screen-heading"><div class="eyebrow">Додатково</div><h2>Ще</h2></div>
+
+      <section class="mobile-more-card mobile-program-settings glass" aria-labelledby="mobileProgramSettingsTitle">
+        <div>
+          <div class="eyebrow" id="mobileProgramSettingsTitle">Календар програми</div>
+          <div class="date-range" id="mobileCurrentWeekRange">—</div>
+        </div>
+        <div class="field">
+          <label for="mobileProgramStartDate">Початок першого тижня</label>
+          <input id="mobileProgramStartDate" type="date" />
+        </div>
+      </section>
+
+      <section class="mobile-more-card glass" aria-labelledby="mobileDataTitle">
+        <div><div class="eyebrow">Захист прогресу</div><h2 id="mobileDataTitle">Дані застосунку</h2></div>
+        <div class="mobile-data-actions">
+          <button class="btn" type="button" onclick="exportBackup()">Зберегти копію</button>
+          <button class="btn" type="button" onclick="document.getElementById('backupFile').click()">Відновити з файла</button>
+        </div>
+      </section>
+
+      <section class="panel glass breakfast-panel">
+        <h2>Швидкі варіанти сніданку</h2>
+        <div class="tips breakfast-grid">
+          <div class="tip">2–3 яйця + 1 булочка</div>
+          <div class="tip">200–250 г творогу + 1 булочка</div>
+          <div class="tip">Грецький йогурт без цукру + 1 булочка</div>
+          <div class="tip">Протеїновий напій + банан</div>
+        </div>
+      </section>
+
+      <div class="footer-note">Дані зберігаються локально у цьому браузері. Періодично завантажуй резервну копію. Це не медичний застосунок і не замінює консультацію лікаря.</div>
+    </div>
+  </main>
 </div>
 <div class="toast" id="appToast" role="status" aria-live="polite"></div>
 <dialog class="exercise-image-dialog" id="exerciseImageDialog" onclick="if(event.target===this)closeExerciseImage()">
@@ -257,8 +293,8 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="app.js?v=20"></script>
-<script src="exercise-details.js?v=20"></script>
-<script src="enhancements.js?v=20"></script>
+<script src="app.js?v=21"></script>
+<script src="exercise-details.js?v=21"></script>
+<script src="enhancements.js?v=21"></script>
 </body>
 </html>
