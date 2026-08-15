@@ -1,5 +1,6 @@
 .hero-tools{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
-.data-menu{position:relative;z-index:40;margin-left:auto}
+.shell{position:relative}
+.data-menu{position:absolute;z-index:60;top:26px;right:28px;margin:0}
 .data-menu>summary{list-style:none;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:var(--text);font-size:25px;font-weight:900;line-height:1;cursor:pointer}
 .data-menu>summary::-webkit-details-marker{display:none}
 .data-menu[open]>summary{border-color:rgba(121,231,255,.38);background:rgba(121,231,255,.12)}
@@ -67,7 +68,7 @@
 :focus-visible{outline:3px solid rgba(121,231,255,.72);outline-offset:3px}
 
 @media(max-width:1100px){
-  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}.data-menu{margin-left:0;align-self:flex-end;margin-top:-61px}
+  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:720px){
   html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px)}
@@ -77,7 +78,8 @@
   .hero{padding:18px;gap:15px}
   .hero h1{font-size:clamp(28px,9vw,38px);line-height:1.04;margin-top:0}
   .hero .sub{font-size:13px;line-height:1.5}
-  .data-menu{margin-top:-59px}.data-menu>summary{width:44px;height:44px}.data-menu-popover{top:50px}
+  .hero>div:first-child{padding-right:54px}
+  .data-menu{top:18px;right:18px}.data-menu>summary{width:44px;height:44px}.data-menu-popover{top:50px;width:min(210px,calc(100vw - 56px))}
   .section-nav{top:calc(env(safe-area-inset-top,0px) + 8px);margin-top:10px;padding:5px;border-radius:16px}
   .section-nav a{min-width:0;padding:9px 4px;font-size:12px}
   #tracker,#training,#progress{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 72px)}
