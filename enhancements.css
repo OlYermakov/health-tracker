@@ -34,7 +34,8 @@
 .wellbeing-panel h2,.summary-section h2{margin:7px 0 7px;font-size:22px}
 .wellbeing-panel p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
 .wellbeing-grid{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px;align-items:end}
-.wellbeing-grid input,.wellbeing-grid select{width:100%;min-width:0}
+.wellbeing-summary-card{min-height:92px;padding:13px 14px;display:grid;align-content:center;gap:5px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.035)}.wellbeing-summary-card span{color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.wellbeing-summary-card strong{font-size:18px}.wellbeing-summary-card small{color:var(--muted);font-size:10px}
+.daily-wellbeing-cell{min-width:250px}.daily-wellbeing-grid{display:grid;grid-template-columns:repeat(2,minmax(96px,1fr));gap:6px}.daily-wellbeing-grid label{display:grid;gap:3px;min-width:0}.daily-wellbeing-grid label>span{color:var(--muted);font-size:9px;font-weight:800}.daily-wellbeing-grid input,.daily-wellbeing-grid select{width:100%;min-width:0;height:34px;padding:6px 7px;border-radius:9px;font-size:11px}
 .pain-warning{grid-column:1/-1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,209,102,.3);background:rgba(255,209,102,.07);color:var(--amber);font-size:13px;line-height:1.45}
 .summary-section{margin-top:18px;padding:22px}
 .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-top:14px}
@@ -75,7 +76,7 @@
 :focus-visible{outline:3px solid rgba(121,231,255,.72);outline-offset:3px}
 
 @media(max-width:1100px){
-  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(3,1fr)}
+  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:720px){
   html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px)}
@@ -135,10 +136,12 @@
   .table-wrap td:nth-child(3)::before{content:"Овочі"}
   .table-wrap td:nth-child(4)::before{content:"Вода"}
   .table-wrap td:nth-child(5)::before{content:"Активний день"}
-  .table-wrap td:nth-child(6){grid-column:1/-1;padding:0;background:transparent;border:0}
+  .table-wrap td:nth-child(6){grid-column:1/-1;padding:10px}
+  .table-wrap td:nth-child(7){grid-column:1/-1;padding:0;background:transparent;border:0}
   .table-wrap .check{width:44px;height:44px;border-radius:13px;font-size:20px}
   .table-wrap .note-cell,.table-wrap .day-note{width:100%;min-width:0;max-width:none}
   .table-wrap .day-note{min-height:44px;padding:11px 12px;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.07)}
+  .daily-wellbeing-cell{min-width:0}.daily-wellbeing-grid{grid-template-columns:1fr 1fr;gap:8px}.daily-wellbeing-grid input,.daily-wellbeing-grid select{height:42px;font-size:13px}
   .ring-wrap{gap:12px}.ring{transform:scale(.92);margin:-6px}
   .today-panel,.wellbeing-panel,.summary-section,.history-section{margin-top:12px;padding:15px}
   .today-heading h2,.history-heading h2{font-size:22px}.today-date{font-size:11px;text-align:right}
@@ -146,8 +149,7 @@
   .today-workouts,.history-list{grid-template-columns:1fr}.today-workout{padding:12px}.today-workout button{min-height:42px}
   .wellbeing-panel{gap:16px}
   .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr;gap:9px}
-  .wellbeing-grid .field{min-width:0}
-  .wellbeing-grid input,.wellbeing-grid select{min-height:44px}
+  .wellbeing-summary-card{min-width:0;min-height:88px}
   .summary-card{padding:13px;min-width:0}
   .summary-card strong{font-size:19px}
   .program-lifecycle{align-items:stretch;flex-direction:column}.program-lifecycle button{width:100%}.program-archive-card>header{display:grid}.program-archive-card>header>div:last-child{text-align:left}.backup-reminder{align-items:stretch;flex-direction:column}.backup-reminder button{width:100%}
