@@ -233,6 +233,14 @@ function updateDayNote(dayIndex,element){
   element._savedTimer=setTimeout(()=>element.classList.remove("saved"),500);
 }
 
+function updateTodayNote(weekIndex,dayIndex,element){
+  if(!Number.isInteger(weekIndex)||weekIndex<0||weekIndex>11||!Number.isInteger(dayIndex)||dayIndex<0||dayIndex>6)return;
+  dayNotes[weekIndex][dayIndex]=element.value.slice(0,500);
+  saveNotes();autoSizeNote(element);element.classList.add("saved");
+  clearTimeout(element._savedTimer);
+  element._savedTimer=setTimeout(()=>element.classList.remove("saved"),500);
+}
+
 function renderWeekSelect(){
   const s=document.getElementById("weekSelect");
   s.innerHTML="";
