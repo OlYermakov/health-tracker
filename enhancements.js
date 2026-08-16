@@ -633,7 +633,16 @@ function renderToday(){
   const poolDraftHTML=enhancements.poolDraft?.week===weekIndex&&Number(enhancements.poolDraft.day)===dayIndex?
     `<div class="today-workout pool"><div><span>Чернетка</span><strong>Басейн</strong><small>Заповни результати після відвідування</small></div><button type="button" onclick="openPoolSession(${weekIndex})">Відкрити</button></div>`:"";
   const workoutHTML=completedHTML||plannedHTML||poolDraftHTML?completedHTML+plannedHTML+poolDraftHTML:`<div class="today-no-workout"><span>Сьогодні тренування не заплановане.</span><button type="button" onclick="openTodayWorkout(${weekIndex},'A',false)">Відкрити програму</button></div>`;
-  content.innerHTML=`<div class="today-context"><strong>${days[dayIndex].name} · тиждень ${weekIndex+1}</strong><span>Швидко відміть головне на сьогодні</span></div><div class="today-grid">${habitButtons}</div><div class="today-workouts">${workoutHTML}</div>`;
+  const todayNote=dayNotes[weekIndex]?.[dayIndex]||"";
+  content.innerHTML=`<div class="today-context"><strong>${days[dayIndex].name} · тиждень ${weekIndex+1}</strong><span>Швидко відміть головне на сьогодні</span></div>
+    <div class="today-grid">${habitButtons}</div>
+    <section class="today-wellbeing" aria-label="Самопочуття сьогодні">
+      <div class="today-section-heading"><strong>Самопочуття</strong><span>Коліна: 0 — болю немає, 10 — найсильніший біль</span></div>
+      ${dailyWellbeingHTML(weekIndex,dayIndex)}
+      <label class="today-note"><span>Замітка</span><textarea rows="2" maxlength="500" placeholder="Самопочуття, активність або що варто пам’ятати…" aria-label="Замітка на сьогодні" oninput="updateTodayNote(${weekIndex},${dayIndex},this)">${escapeNote(todayNote)}</textarea></label>
+    </section>
+    <div class="today-workouts">${workoutHTML}</div>`;
+  requestAnimationFrame(()=>content.querySelectorAll(".today-note textarea").forEach(autoSizeNote));
 }
 
 function toggleTodayHabit(weekIndex,dayIndex,key){
