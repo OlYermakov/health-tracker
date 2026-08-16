@@ -112,7 +112,7 @@ tr.workout td{background:linear-gradient(90deg,rgba(121,231,255,.08),rgba(183,15
 @media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}}
 @media(min-width:1101px){
   #tracker>.layout{grid-template-columns:minmax(0,1fr) 350px}
-  .dash-side{width:100%;min-width:0;justify-self:stretch;gap:18px;align-self:stretch}
+  .dash-side{width:100%;min-width:0;justify-self:stretch;gap:18px;align-self:start;align-content:start;grid-auto-rows:max-content}
 }
 @media(max-width:720px){
   body{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.cards{grid-template-columns:1fr}.week-nav{grid-template-columns:repeat(4,1fr)}
