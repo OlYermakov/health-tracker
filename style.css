@@ -29,7 +29,7 @@ body{
   padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));
   overflow-x:hidden;overscroll-behavior-y:none
 }
-button,input,select{font:inherit}
+button,input,select,textarea{font:inherit}
 .shell{max-width:1380px;margin:0 auto}
 .glass{
   background:linear-gradient(135deg,rgba(255,255,255,.095),rgba(255,255,255,.035));
@@ -110,9 +110,15 @@ tr.workout td{background:linear-gradient(90deg,rgba(121,231,255,.08),rgba(183,15
 }
 .toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}}
+@media(min-width:1101px){
+  .dash-side{gap:0;align-self:stretch;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.095),rgba(255,255,255,.035));border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%)}
+  .dash-side>.panel.glass{border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .dash-side>.week-jump-panel{border-top:1px solid var(--line)}
+}
 @media(max-width:720px){
   body{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.cards{grid-template-columns:1fr}.week-nav{grid-template-columns:repeat(4,1fr)}
   .ring-wrap{grid-template-columns:1fr;justify-items:center}
   table{font-size:13px}th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4){display:none}
   .hero,.panel{padding:16px}.glass{border-radius:22px}
+  input,select,textarea{font-size:16px!important}
 }
