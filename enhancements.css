@@ -29,6 +29,11 @@
 .today-workout.pool{border-color:rgba(94,210,255,.24);background:rgba(94,210,255,.055)}
 .today-no-workout{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted)}
 .today-empty{margin-top:15px;display:grid;gap:5px}.today-empty span{color:var(--muted);font-size:13px}
+.today-wellbeing{margin-top:10px;padding:13px 14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.03)}
+.today-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px}.today-section-heading strong{font-size:14px}.today-section-heading span{color:var(--muted);font-size:10px;text-align:right}
+.today-wellbeing .daily-wellbeing-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.today-wellbeing .daily-wellbeing-grid label>span,.today-note>span{font-size:10px}
+.today-wellbeing .daily-wellbeing-grid input,.today-wellbeing .daily-wellbeing-grid select{height:42px;font-size:14px}
+.today-note{display:grid;gap:5px;margin-top:9px;color:var(--muted);font-weight:800}.today-note textarea{width:100%;min-height:48px;max-height:112px;resize:none;padding:10px 11px;color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:11px;outline:none;line-height:1.4}.today-note textarea:focus{border-color:rgba(121,231,255,.5);box-shadow:0 0 0 3px rgba(121,231,255,.08)}
 .program-settings{margin-top:18px;padding:16px 20px;display:flex;align-items:end;justify-content:space-between;gap:18px}
 .date-range{font-size:17px;font-weight:850;margin-top:7px;color:var(--text)}
 .mobile-table-hint{display:none;color:var(--muted);font-size:12px;margin:0 0 10px}
@@ -180,6 +185,7 @@
   .today-panel,.wellbeing-panel,.summary-section,.history-section{margin-top:12px;padding:15px}
   .today-heading h2,.history-heading h2{font-size:22px}.today-date{font-size:11px;text-align:right}
   .today-grid{grid-template-columns:1fr 1fr;gap:8px}.today-habit{min-width:0;padding:9px;font-size:12px}
+  .today-section-heading{display:grid;gap:3px}.today-section-heading span{text-align:left}.today-wellbeing .daily-wellbeing-grid{grid-template-columns:1fr 1fr;gap:8px}.today-wellbeing .daily-wellbeing-grid input,.today-wellbeing .daily-wellbeing-grid select,.today-note textarea{font-size:16px}
   .today-workouts,.history-list{grid-template-columns:1fr}.today-workout{padding:12px}.today-workout button{min-height:42px}
   .wellbeing-panel{gap:16px}
   .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr;gap:9px}
