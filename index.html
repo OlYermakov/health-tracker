@@ -11,11 +11,12 @@
 <title>12-тижневий health tracker</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css?v=30" />
-<link rel="stylesheet" href="training.css?v=30" />
-<link rel="stylesheet" href="notes.css?v=30" />
-<link rel="stylesheet" href="exercise-details.css?v=30" />
-<link rel="stylesheet" href="enhancements.css?v=30" />
+<link rel="stylesheet" href="style.css?v=31" />
+<link rel="stylesheet" href="training.css?v=31" />
+<link rel="stylesheet" href="notes.css?v=31" />
+<link rel="stylesheet" href="exercise-details.css?v=31" />
+<link rel="stylesheet" href="enhancements.css?v=31" />
+<link rel="stylesheet" href="analytics.css?v=31" />
 </head>
 <body>
 <div class="shell">
@@ -40,7 +41,7 @@
     <a href="#todayPanel" data-app-screen="today" aria-current="page"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.6v10h13v-10"/><path d="M9.5 19.6v-6h5v6"/></svg></span><span>Сьогодні</span></a>
     <a href="#weekOverview" data-app-screen="week"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M7.5 14h2M14.5 14h2M7.5 17.5h2M14.5 17.5h2"/></svg></span><span>Тиждень</span></a>
     <a href="#training" data-app-screen="training"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 8.5v7M3.5 9.5v5M6.5 12h11M17.5 8.5v7M20.5 9.5v5"/></svg></span><span>Тренування</span></a>
-    <a href="#progress" data-app-screen="progress"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="4" height="9" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="17" y="8" width="4" height="12" rx="1"/></svg></span><span>Прогрес</span></a>
+    <a href="#healthAnalytics" data-app-screen="progress"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/><path d="M3 21h19"/></svg></span><span>Аналітика</span></a>
     <a href="#moreContent" data-app-screen="more"><span class="section-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span><span>Ще</span></a>
   </nav>
 
@@ -196,7 +197,60 @@
     </div>
 
     <div class="mobile-screen" id="progress-screen" data-mobile-screen="progress">
-      <div class="mobile-screen-heading"><div class="eyebrow">Аналітика</div><h2>Прогрес</h2></div>
+      <div class="mobile-screen-heading"><div class="eyebrow">Apple Health і програма</div><h2>Аналітика</h2></div>
+
+      <section class="health-analytics" id="healthAnalytics" aria-labelledby="healthAnalyticsTitle">
+        <section class="analytics-command glass">
+          <div class="analytics-command-copy">
+            <div class="eyebrow">Локальний аналіз</div>
+            <h2 id="healthAnalyticsTitle">Показники здоров’я</h2>
+            <p id="healthAnalyticsStatus">Імпортуй експорт Apple Health — дані буде оброблено тільки на цьому пристрої.</p>
+          </div>
+          <div class="analytics-command-actions">
+            <button class="btn primary" id="healthImportButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+              <span>Імпортувати Apple Health</span>
+            </button>
+            <button class="btn analytics-clear" id="healthClearButton" type="button" hidden>Видалити імпорт</button>
+            <input id="healthImportFile" type="file" accept=".zip,.xml,.json,application/zip,application/xml,application/json,text/xml" hidden />
+          </div>
+          <div class="analytics-import-progress" id="healthImportProgress" hidden>
+            <div><span id="healthImportProgressLabel">Підготовка…</span><strong id="healthImportProgressValue">0%</strong></div>
+            <progress id="healthImportProgressBar" max="100" value="0"></progress>
+            <small>Не закривай застосунок під час обробки великого архіву.</small>
+          </div>
+        </section>
+
+        <div class="analytics-toolbar glass" id="analyticsToolbar" hidden>
+          <div class="analytics-period" role="group" aria-label="Період аналітики">
+            <button type="button" data-analytics-range="7">7 днів</button>
+            <button type="button" data-analytics-range="28" aria-pressed="true">28 днів</button>
+            <button type="button" data-analytics-range="90">3 міс.</button>
+            <button type="button" data-analytics-range="365">1 рік</button>
+            <button type="button" data-analytics-range="all">Усе</button>
+          </div>
+          <div class="analytics-period-caption" id="analyticsPeriodCaption">—</div>
+        </div>
+
+        <nav class="analytics-tabs glass" id="analyticsTabs" role="tablist" aria-label="Дашборди здоров’я" hidden>
+          <button type="button" role="tab" data-analytics-tab="overview" aria-selected="true"><span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>Огляд</button>
+          <button type="button" role="tab" data-analytics-tab="activity"><span><svg viewBox="0 0 24 24"><path d="M4 18.5 9 13l3.5 3.5L20 7"/><path d="M15 7h5v5"/></svg></span>Активність</button>
+          <button type="button" role="tab" data-analytics-tab="sleep"><span><svg viewBox="0 0 24 24"><path d="M20.5 15.2A8.2 8.2 0 0 1 8.8 3.5a8.5 8.5 0 1 0 11.7 11.7Z"/></svg></span>Сон</button>
+          <button type="button" role="tab" data-analytics-tab="gait"><span><svg viewBox="0 0 24 24"><path d="M8.2 3.5c1.6.3 2.4 2.6 1.8 5.1-.6 2.4-2.3 4-3.9 3.6-1.5-.4-2.3-2.6-1.7-5 .5-2.5 2.2-4.1 3.8-3.7Z"/><path d="M16.7 11.5c1.6.4 2.4 2.7 1.8 5.1-.6 2.5-2.3 4.1-3.9 3.7-1.5-.4-2.3-2.7-1.7-5.1.5-2.4 2.2-4 3.8-3.7Z"/></svg></span>Хода й коліна</button>
+          <button type="button" role="tab" data-analytics-tab="heart"><span><svg viewBox="0 0 24 24"><path d="M20.8 5.9c-2-2-5.2-2-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 0 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z"/></svg></span>Серце</button>
+          <button type="button" role="tab" data-analytics-tab="weight"><span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="4"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="m12 10 2-2"/></svg></span>Вага</button>
+          <button type="button" role="tab" data-analytics-tab="workouts"><span><svg viewBox="0 0 24 24"><path d="M6.5 8.5v7M3.5 9.5v5M6.5 12h11M17.5 8.5v7M20.5 9.5v5"/></svg></span>Тренування</button>
+        </nav>
+
+        <div class="analytics-dashboard" id="healthAnalyticsContent" aria-live="polite"></div>
+      </section>
+
+      <details class="program-progress-details glass" id="programProgressDetails">
+        <summary>
+          <span><span class="eyebrow">Поточна програма</span><strong>Прогрес 12-тижневого плану</strong></span>
+          <span class="program-progress-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="program-progress-content">
       <section class="layout" id="progress">
     <div class="panel glass">
       <h2>Динаміка ваги</h2>
@@ -229,6 +283,8 @@
     </div>
     <div id="programArchiveList"></div>
       </section>
+        </div>
+      </details>
     </div>
 
     <div class="mobile-screen" id="more" data-mobile-screen="more">
@@ -293,8 +349,9 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="app.js?v=30"></script>
-<script src="exercise-details.js?v=30"></script>
-<script src="enhancements.js?v=30"></script>
+<script src="app.js?v=31"></script>
+<script src="exercise-details.js?v=31"></script>
+<script src="enhancements.js?v=31"></script>
+<script src="analytics.js?v=31"></script>
 </body>
 </html>

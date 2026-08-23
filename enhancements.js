@@ -1252,7 +1252,8 @@ function archiveCurrentProgram(){
 
 async function exportBackup(){
   try{await navigator.storage?.persist?.();}catch(e){}
-  const payload={format:"health-tracker-backup",version:ENHANCEMENTS_VERSION,exportedAt:new Date().toISOString(),tracker:state,notes:dayNotes,enhancements};
+  const analytics=typeof getHealthAnalyticsBackup==="function"?await getHealthAnalyticsBackup():null;
+  const payload={format:"health-tracker-backup",version:ENHANCEMENTS_VERSION,exportedAt:new Date().toISOString(),tracker:state,notes:dayNotes,enhancements,analytics};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download=`health-tracker-backup-${localISODate()}.json`;link.click();URL.revokeObjectURL(url);
   enhancements.lastBackupAt=new Date().toISOString();persistEnhancements();renderSummary();showToast("Резервну копію завантажено.");
@@ -1263,7 +1264,9 @@ async function importBackup(file){
     const payload=JSON.parse(await file.text());
     if(payload?.format!=="health-tracker-backup"||!Array.isArray(payload?.tracker?.weeks)||payload.tracker.weeks.length!==12)throw new Error("invalid");
     const restored={version:ENHANCEMENTS_VERSION,tracker:normalizeState(payload.tracker),notes:normalizeNotes(payload.notes),enhancements:normalizeEnhancements(payload.enhancements)};
-    writeUnifiedStore(restored);showToast("Копію відновлено. Оновлюю застосунок…");setTimeout(()=>location.reload(),700);
+    writeUnifiedStore(restored);
+    if(payload.analytics&&typeof restoreHealthAnalyticsBackup==="function")await restoreHealthAnalyticsBackup(payload.analytics);
+    showToast("Копію відновлено. Оновлюю застосунок…");setTimeout(()=>location.reload(),700);
   }catch(e){showToast("Цей файл не є коректною резервною копією трекера.");}
 }
 

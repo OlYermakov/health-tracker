@@ -49,13 +49,13 @@ const MIN_EXERCISES_TO_COMPLETE = 4;
 let currentWeek = 1;
 let currentPlan = "A";
 const MOBILE_APP_QUERY = "(max-width: 720px)";
-const APP_SCREEN_HASHES = {today:"#todayPanel",week:"#weekOverview",training:"#training",progress:"#progress",more:"#moreContent"};
+const APP_SCREEN_HASHES = {today:"#todayPanel",week:"#weekOverview",training:"#training",progress:"#healthAnalytics",more:"#moreContent"};
 
 function mobileAppEnabled(){return window.matchMedia(MOBILE_APP_QUERY).matches;}
 function appScreenFromHash(hash=location.hash){
   if(hash==="#tracker"||hash==="#weekOverview")return "week";
   if(hash==="#training"||hash==="#trainingHistory")return "training";
-  if(hash==="#progress")return "progress";
+  if(hash==="#progress"||hash==="#healthAnalytics")return "progress";
   if(hash==="#more"||hash==="#moreContent")return "more";
   if(hash==="#today"||hash==="#todayPanel")return "today";
   return "today";
@@ -73,7 +73,7 @@ function navigateToAppScreen(screen,{updateHistory=false,scroll=true}={}){
   }
   if(updateHistory&&location.hash!==APP_SCREEN_HASHES[selected])history.pushState({screen:selected},"",APP_SCREEN_HASHES[selected]);
   if(scroll)window.scrollTo({top:0,behavior:"auto"});
-  if(selected==="progress")requestAnimationFrame(drawCharts);
+  if(selected==="progress")requestAnimationFrame(()=>{drawCharts();if(typeof renderHealthAnalytics==="function")renderHealthAnalytics();});
   if(selected==="week")requestAnimationFrame(()=>document.querySelectorAll(".day-note").forEach(autoSizeNote));
 }
 
@@ -443,6 +443,7 @@ function drawWeightChart(values,minY,maxY){
 function renderAll(){
   renderWeekSelect();renderRows();renderFields();renderWeekNav();renderCards();renderTraining();
   if(typeof renderEnhancements==="function")renderEnhancements();
+  if(typeof renderHealthAnalytics==="function")renderHealthAnalytics();
   requestAnimationFrame(drawCharts);
 }
 
@@ -465,6 +466,7 @@ document.getElementById("weekSelect").addEventListener("change",e=>{currentWeek=
   input.addEventListener("blur",event=>{if(validateWeightInput(event.target))renderAll();});
 });
 window.addEventListener("resize",()=>requestAnimationFrame(drawCharts));
+document.getElementById("programProgressDetails")?.addEventListener("toggle",event=>{if(event.currentTarget.open)requestAnimationFrame(drawCharts);});
 
 document.querySelector(".section-nav")?.addEventListener("click",event=>{
   const link=event.target.closest("[data-app-screen]");
