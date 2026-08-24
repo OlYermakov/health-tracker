@@ -1,8 +1,8 @@
-const CACHE_NAME="health-tracker-v31";
+const CACHE_NAME="health-tracker-v32";
 const APP_SHELL=[
   "./","./index.html","./style.css?v=31","./training.css?v=31","./notes.css?v=31",
-  "./exercise-details.css?v=31","./enhancements.css?v=31","./analytics.css?v=31","./app.js?v=31",
-  "./exercise-details.js?v=31","./enhancements.js?v=31","./analytics.js?v=31","./health-import-worker.js?v=31","./manifest.webmanifest","./icon.svg",
+  "./exercise-details.css?v=31","./enhancements.css?v=31","./analytics.css?v=32","./app.js?v=31",
+  "./exercise-details.js?v=31","./enhancements.js?v=31","./analytics.js?v=32","./health-import-worker.js?v=31","./manifest.webmanifest","./icon.svg",
   "./assets/exercises/stationary-bike.webp","./assets/exercises/chest-press.webp","./assets/exercises/seated-row.webp",
   "./assets/exercises/leg-curl.webp","./assets/exercises/leg-press.webp","./assets/exercises/hip-thrust.webp",
   "./assets/exercises/pallof-press.webp","./assets/exercises/elliptical.webp","./assets/exercises/lat-pulldown.webp",
