@@ -154,7 +154,7 @@ function waistStats(){
   return {start,current,delta:start!==null&&current!==null?current-start:null};
 }
 
-function formatWaistDelta(delta){return delta===null?"—":`${delta>0?"+":""}${delta.toFixed(1)} см`;}
+function formatWaistDelta(delta){return delta===null?"—":`${formatSignedUk(delta,1)} см`;}
 
 function renderSummary(){
   const active=state.weeks.map((week,index)=>({week,index})).filter(({week,index})=>activeWeek(week,index));
@@ -171,29 +171,15 @@ function renderSummary(){
   const reminder=document.getElementById("backupReminder");if(reminder)reminder.hidden=backupAge<=7*86400000;
 }
 
+// Weekly sleep/energy/knee averages now live in the weekly summary (insights.js).
 function renderWellbeing(){
-  const week=enhancements.weeks[currentWeek-1];
-  document.getElementById("waistCircumference").value=week.waist;
-  const stats=weeklyWellbeingStats();
-  document.getElementById("weeklySleepAverage").textContent=formatSleepAverage(stats.sleepAverage);
-  document.getElementById("weeklySleepCoverage").textContent=`${stats.sleepDays} із 7 днів`;
-  document.getElementById("weeklyEnergyAverage").textContent=stats.energyAverage===null?"—":`${stats.energyAverage.toFixed(1)} / 10`;
-  document.getElementById("weeklyEnergyCoverage").textContent=`${stats.energyDays} із 7 днів`;
-  document.getElementById("weeklyKneeAverage").textContent=stats.painAverage===null?"—":`${stats.painAverage.toFixed(1)} / 10`;
-  document.getElementById("weeklyKneeMaximum").textContent=`Максимум: ${stats.painMaximum===null?"—":`${stats.painMaximum} / 10`}`;
-  document.getElementById("weeklyWellbeingCoverage").textContent=`${Math.round(stats.completeDays/7*100)}%`;
-  const pain=stats.painMaximum??0;
-  const warning=document.getElementById("painWarning");
-  warning.hidden=pain<4;
-  warning.textContent=pain>=7?
-    "Біль оцінено як сильний. Не тренуйся через біль; обговори стан із лікарем або фізіотерапевтом.":
-    "Коліна реагують на навантаження. Зменш вагу та амплітуду і стеж, чи немає набряку, блокування або нестабільності.";
+  document.getElementById("waistCircumference").value=enhancements.weeks[currentWeek-1].waist;
 }
 
 function updateChartSummaries(){
   const weights=state.weeks.map((week,index)=>({week:index+1,value:weightNumber(week.endWeight)})).filter(item=>item.value!==null);
   document.getElementById("weightChartSummary").textContent=weights.length?
-    `Вага за заповненими тижнями: ${weights.map(item=>`тиждень ${item.week} — ${item.value.toFixed(1)} кг`).join(", ")}.`:
+    `Вага за заповненими тижнями: ${weights.map(item=>`тиждень ${item.week} — ${formatNumberUk(item.value,1)} кг`).join(", ")}.`:
     "Даних про вагу поки немає.";
   const active=state.weeks.map((week,index)=>({week:index+1,pct:Math.round(completionOf(week)*100)})).filter(item=>item.pct>0);
   document.getElementById("completionChartSummary").textContent=active.length?

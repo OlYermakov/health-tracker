@@ -44,7 +44,7 @@ function analyticsLatest(days,key){for(let index=days.length-1;index>=0;index--)
 function clamp(value,min,max){return Math.min(max,Math.max(min,value));}
 function round(value,digits=0){if(analyticsNumber(value)===null)return null;const power=10**digits;return Math.round(value*power)/power;}
 function formatInteger(value){return analyticsNumber(value)===null?"—":Math.round(value).toLocaleString("uk-UA");}
-function formatDecimal(value,digits=1){return analyticsNumber(value)===null?"—":Number(value).toLocaleString("uk-UA",{minimumFractionDigits:digits,maximumFractionDigits:digits});}
+function formatDecimal(value,digits=1){return analyticsNumber(value)===null?"—":Number(value).toLocaleString("uk-UA",{minimumFractionDigits:digits,maximumFractionDigits:digits}).replace(/^-/,"−");}
 function formatDateLabel(date,{year=false}={}){if(!date)return "—";return new Intl.DateTimeFormat("uk-UA",year?{day:"numeric",month:"short",year:"numeric"}:{day:"numeric",month:"short"}).format(new Date(`${date}T12:00:00`));}
 function formatDateRange(start,end){return start&&end?`${formatDateLabel(start,{year:true})} — ${formatDateLabel(end,{year:true})}`:"—";}
 function pluralDays(value){const mod10=value%10,mod100=value%100;return mod10===1&&mod100!==11?"день":mod10>=2&&mod10<=4&&(mod100<12||mod100>14)?"дні":"днів";}
@@ -86,7 +86,9 @@ function trendComparison(values){
   const clean=values.map(analyticsNumber).filter(value=>value!==null);if(clean.length<4)return {text:"Недостатньо даних",className:"neutral"};
   const half=Math.max(1,Math.floor(clean.length/2)),before=analyticsAverage(clean.slice(0,half)),after=analyticsAverage(clean.slice(-half));
   if(!before)return {text:"Без порівняння",className:"neutral"};const pct=(after-before)/Math.abs(before)*100;
-  return {text:`${pct>0?"↑":pct<0?"↓":"→"} ${Math.abs(pct).toFixed(0)}% до попереднього періоду`,className:Math.abs(pct)<2?"neutral":pct>0?"":"down"};
+  const rounded=Math.round(pct);
+  if(rounded===0)return {text:"→ без змін до попереднього періоду",className:"neutral"};
+  return {text:`${rounded>0?"↑":"↓"} ${Math.abs(rounded)}% до попереднього періоду`,className:Math.abs(pct)<2?"neutral":pct>0?"":"down"};
 }
 
 function metricCard(label,value,caption="",tone="cyan"){
@@ -107,18 +109,37 @@ function downsampleDays(days,series,maxPoints=180){
   return result;
 }
 
+// On phones only some tabs fit: keep the selected one visible and fade the edge while more tabs are hidden.
+function updateAnalyticsTabsOverflow(){
+  const tabs=document.getElementById("analyticsTabs");if(!tabs)return;
+  const more=tabs.scrollWidth-tabs.clientWidth-tabs.scrollLeft>4;
+  tabs.classList.toggle("has-more",more);
+}
+function revealActiveAnalyticsTab(){
+  const tabs=document.getElementById("analyticsTabs"),active=tabs?.querySelector('[aria-selected="true"]');
+  if(tabs&&active&&!tabs.hidden&&tabs.scrollWidth>tabs.clientWidth){
+    const left=active.offsetLeft-(tabs.clientWidth-active.offsetWidth)/2;
+    tabs.scrollTo({left:Math.max(0,left),behavior:"auto"});
+  }
+  requestAnimationFrame(updateAnalyticsTabsOverflow);
+}
+
+function formatAxisNumber(value,decimals){return value.toFixed(decimals).replace(".",",");}
+
 function lineChart(id,days,series,{height=230,min=null,max=null}={}){
   const points=downsampleDays(days,series),allValues=points.flatMap(point=>point.values).filter(value=>value!==null);
   if(!allValues.length)return `<div class="analytics-chart-empty">Для цього графіка поки немає достатньо даних.</div>`;
   let minY=min??Math.min(...allValues),maxY=max??Math.max(...allValues);if(minY===maxY){minY-=1;maxY+=1;}const padding=(maxY-minY)*.08;minY=min??(minY-padding);maxY=max??(maxY+padding);
   const width=typeof mobileAppEnabled==="function"&&mobileAppEnabled()?360:720,pad={left:42,right:14,top:15,bottom:28},innerW=width-pad.left-pad.right,innerH=height-pad.top-pad.bottom;
   const x=index=>pad.left+(points.length===1?innerW/2:innerW*index/(points.length-1)),y=value=>pad.top+innerH*(1-(value-minY)/(maxY-minY));
-  const grids=Array.from({length:5},(_,index)=>{const value=maxY-(maxY-minY)*index/4,cy=pad.top+innerH*index/4;return `<line class="grid" x1="${pad.left}" y1="${cy}" x2="${width-pad.right}" y2="${cy}"/><text x="${pad.left-7}" y="${cy+3}" text-anchor="end">${series[0].axisFormat?series[0].axisFormat(value):round(value,0)}</text>`;}).join("");
+  // Enough decimals that the five grid labels never repeat (e.g. weight 91,3 / 91,8 / 92,3).
+  const gridStep=(maxY-minY)/4,axisDecimals=gridStep>=1?0:gridStep>=.1?1:2;
+  const grids=Array.from({length:5},(_,index)=>{const value=maxY-(maxY-minY)*index/4,cy=pad.top+innerH*index/4;return `<line class="grid" x1="${pad.left}" y1="${cy}" x2="${width-pad.right}" y2="${cy}"/><text x="${pad.left-7}" y="${cy+3}" text-anchor="end">${series[0].axisFormat?series[0].axisFormat(value):formatAxisNumber(value,axisDecimals)}</text>`;}).join("");
   const paths=series.map((item,seriesIndex)=>{
     let path="",active=false;points.forEach((point,index)=>{const value=point.values[seriesIndex];if(value===null){active=false;return;}path+=`${active?"L":"M"}${x(index).toFixed(1)},${y(value).toFixed(1)} `;active=true;});
     return `<path class="${seriesIndex?"line-alt":"line-main"}" style="stroke:${item.color||""}" d="${path.trim()}"/>`;
   }).join("");
-  const labels=[0,Math.floor((points.length-1)/2),points.length-1].filter((value,index,array)=>value>=0&&array.indexOf(value)===index).map(index=>`<text x="${x(index)}" y="${height-8}" text-anchor="middle">${formatDateLabel(points[index].date)}</text>`).join("");
+  const labels=[0,Math.floor((points.length-1)/2),points.length-1].filter((value,index,array)=>value>=0&&array.indexOf(value)===index).map(index=>`<text x="${x(index)}" y="${height-8}" text-anchor="${points.length>1&&index===0?"start":points.length>1&&index===points.length-1?"end":"middle"}">${formatDateLabel(points[index].date)}</text>`).join("");
   analyticsChartRegistry.set(id,{points,series,minY,maxY,width,height,pad});
   return `<div class="analytics-chart-wrap"><svg class="analytics-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" data-interactive-chart="${id}" role="img" aria-label="${analyticsEscape(series.map(item=>item.name).join(", "))}">${grids}<line class="axis" x1="${pad.left}" y1="${height-pad.bottom}" x2="${width-pad.right}" y2="${height-pad.bottom}"/>${paths}${labels}<line class="chart-focus" data-chart-focus x1="0" x2="0" y1="${pad.top}" y2="${height-pad.bottom}" hidden/><rect class="chart-hit" x="${pad.left}" y="${pad.top}" width="${innerW}" height="${innerH}"/></svg><div class="analytics-tooltip" hidden></div></div><div class="analytics-legend">${series.map(item=>`<span><i style="background:${item.color||"var(--cyan)"}"></i>${analyticsEscape(item.name)}</span>`).join("")}</div>`;
 }
@@ -219,7 +240,7 @@ function renderGait(days){
 }
 
 function pearson(pairs){if(pairs.length<2)return null;const xs=pairs.map(pair=>pair[0]),ys=pairs.map(pair=>pair[1]),mx=analyticsAverage(xs),my=analyticsAverage(ys),numerator=analyticsSum(pairs.map(pair=>(pair[0]-mx)*(pair[1]-my))),dx=Math.sqrt(analyticsSum(xs.map(value=>(value-mx)**2))),dy=Math.sqrt(analyticsSum(ys.map(value=>(value-my)**2)));return dx&&dy?numerator/(dx*dy):0;}
-function correlationText(value){if(value===null)return "ще не розраховано";const magnitude=Math.abs(value),strength=magnitude<.2?"майже відсутній":magnitude<.4?"слабкий":magnitude<.65?"помірний":"помітний";return `${strength} (${value>=0?"прямий":"зворотний"}, r=${value.toFixed(2)})`;}
+function correlationText(value){if(value===null)return "ще не розраховано";const magnitude=Math.abs(value),strength=magnitude<.2?"майже відсутній":magnitude<.4?"слабкий":magnitude<.65?"помірний":"помітний";return `${strength} (${value>=0?"прямий":"зворотний"}, r=${formatDecimal(value,2)})`;}
 
 function renderHeart(days){
   const rhr=analyticsAverage(days.map(day=>day.restingHeartRate)),resp=analyticsAverage(days.map(day=>day.respiratoryRate)),spo2=analyticsAverage(days.map(day=>day.spo2)),heartMax=analyticsLatest(days,"heartMax"),vo2=analyticsLatest(days,"vo2max"),recent=[...days].reverse().filter(day=>day.heartMin!==null&&day.heartMax!==null).slice(0,7);
@@ -269,6 +290,7 @@ function renderHealthAnalytics(){
   document.getElementById("analyticsPeriodCaption").textContent=formatDateRange(days[0]?.date,days[days.length-1]?.date);
   document.querySelectorAll("[data-analytics-range]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.analyticsRange===analyticsRange)));
   document.querySelectorAll("[data-analytics-tab]").forEach(button=>button.setAttribute("aria-selected",String(button.dataset.analyticsTab===analyticsTab)));
+  revealActiveAnalyticsTab();
   analyticsChartRegistry.clear();const renderers={overview:renderOverview,activity:renderActivity,sleep:renderSleep,gait:renderGait,heart:renderHeart,weight:renderWeight,workouts:renderWorkouts};content.innerHTML=renderers[analyticsTab](days);wireAnalyticsControls();wireAnalyticsCharts();
 }
 
@@ -286,7 +308,7 @@ function wireAnalyticsControls(){
 async function startHealthImport(file){
   if(!file)return;const progress=document.getElementById("healthImportProgress"),bar=document.getElementById("healthImportProgressBar"),value=document.getElementById("healthImportProgressValue"),label=document.getElementById("healthImportProgressLabel"),button=document.getElementById("healthImportButton");
   progress.hidden=false;bar.value=0;value.textContent="0%";label.textContent="Перевіряю файл…";button.disabled=true;
-  const worker=new Worker("./health-import-worker.js?v=37");
+  const worker=new Worker("./health-import-worker.js?v=38");
   worker.onmessage=async event=>{
     if(event.data?.type==="progress"){bar.value=event.data.percent||0;value.textContent=`${event.data.percent||0}%`;label.textContent=event.data.label||"Обробка…";return;}
     if(event.data?.type==="error"){worker.terminate();progress.hidden=true;button.disabled=false;showToast(event.data.message||"Не вдалося імпортувати Apple Health.");return;}
@@ -303,6 +325,7 @@ function initializeHealthAnalytics(){
   const importButton=document.getElementById("healthImportButton"),input=document.getElementById("healthImportFile"),clear=document.getElementById("healthClearButton"),tabs=document.getElementById("analyticsTabs"),toolbar=document.getElementById("analyticsToolbar");if(!importButton||!input)return;
   importButton.addEventListener("click",()=>input.click());input.addEventListener("change",event=>{const [file]=event.target.files;if(file)startHealthImport(file);event.target.value="";});
   clear.addEventListener("click",async()=>{if(!confirm("Видалити лише імпортовані показники Apple Health? Дані 12-тижневої програми та історія тренувань залишаться."))return;await deleteHealthAnalytics();healthAnalyticsData=null;renderHealthAnalytics();showToast("Імпортовані показники видалено.");});
+  tabs.addEventListener("scroll",updateAnalyticsTabsOverflow,{passive:true});window.addEventListener("resize",updateAnalyticsTabsOverflow);
   tabs.addEventListener("click",event=>{const button=event.target.closest("[data-analytics-tab]");if(!button)return;analyticsTab=button.dataset.analyticsTab;localStorage.setItem(ANALYTICS_TAB_KEY,analyticsTab);renderHealthAnalytics();document.getElementById("healthAnalyticsContent")?.scrollIntoView({behavior:"smooth",block:"start"});});
   toolbar.addEventListener("click",event=>{const button=event.target.closest("[data-analytics-range]");if(!button)return;analyticsRange=button.dataset.analyticsRange;localStorage.setItem(ANALYTICS_RANGE_KEY,analyticsRange);renderHealthAnalytics();});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(healthAnalyticsData)renderHealthAnalytics();},120);});

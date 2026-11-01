@@ -77,7 +77,7 @@ function leadingNumber(value){
   return match?Number(match[0]):null;
 }
 
-function formatKg(value){return `${Number.isInteger(value)?value:value.toFixed(1).replace(".",",")} кг`;}
+function formatKg(value){return `${Number.isInteger(value)?value:formatNumberUk(value,1)} кг`;}
 
 // Suggests the next working weight from the previous result (double progression):
 // once every prescribed set hit the top of the rep range, add a small step.
@@ -137,7 +137,9 @@ function injectExerciseLogs(){
 function renderToday(){
   const dateElement=document.getElementById("todayDate"),content=document.getElementById("todayContent");
   if(!dateElement||!content)return;
-  dateElement.textContent=new Intl.DateTimeFormat("uk-UA",{weekday:"long",day:"numeric",month:"long"}).format(new Date());
+  const todayLabel=new Intl.DateTimeFormat("uk-UA",{weekday:"long",day:"numeric",month:"long"}).format(new Date());
+  // Only the weekday starts with a capital letter: "Неділя, 1 листопада".
+  dateElement.textContent=todayLabel.charAt(0).toUpperCase()+todayLabel.slice(1);
   const position=programPosition();
   if(position.status==="before"){
     content.innerHTML=`<div class="today-empty"><strong>Програма ще не почалася</strong><span>До старту ${position.days} ${position.days===1?"день":"днів"}. За потреби зміни дату в календарі програми.</span></div>`;return;

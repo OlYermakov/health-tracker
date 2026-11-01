@@ -8,42 +8,43 @@ const BACKUP_REMINDER_DAYS=7;
 const EVENING_HOUR=18;
 const MORNING_UNTIL_HOUR=14;
 
+const KNEE_PAIN_SEVERE_LEVEL=7;
+
 function weeklySummary(weekIndex){
   const week=state.weeks[weekIndex];
   if(!week)return null;
   const habits=Object.keys(HABIT_LABELS).map(key=>({key,label:HABIT_LABELS[key],days:week.days.filter(day=>day[key]).length}));
-  const habitDays=habits.reduce((sum,habit)=>sum+habit.days,0);
   const records=completedTrainingRecordsForWeek(weekIndex);
   const wellbeing=weeklyWellbeingStats(weekIndex);
   const start=weightNumber(week.startWeight),end=weightNumber(week.endWeight);
   return {
     weekIndex,
     habits,
-    habitPercent:Math.round(habitDays/21*100),
+    // Same formula as the "Виконання тижня" ring, so both places show one number.
+    completionPercent:Math.round(completionOf(week)*100),
     activeDays:activityCount(week),
     workouts:records.length,
     gym:records.filter(record=>!isPoolRecord(record)).length,
     pool:records.filter(isPoolRecord).length,
     sleepAverage:wellbeing.sleepAverage,
+    sleepDays:wellbeing.sleepDays,
     energyAverage:wellbeing.energyAverage,
+    energyDays:wellbeing.energyDays,
+    painAverage:wellbeing.painAverage,
     painMaximum:wellbeing.painMaximum,
+    completeDays:wellbeing.completeDays,
     weightChange:start!==null&&end!==null?end-start:null,
     hasData:activeWeek(week,weekIndex)
   };
 }
 
-function signedNumber(value,digits=1,unit=""){
-  if(value===null||value===undefined)return "";
-  const rounded=Number(value.toFixed(digits));
-  if(rounded===0)return `±0${unit}`;
-  return `${rounded>0?"+":"−"}${Math.abs(rounded).toFixed(digits).replace(".",",")}${unit}`;
-}
-
-// Short advice for the next week, based on the weakest area.
+// Advice for the next week, based on the weakest area. Knee pain always comes first.
 function weeklyFocus(summary){
   if(!summary?.hasData)return "";
+  if(summary.painMaximum!==null&&summary.painMaximum>=KNEE_PAIN_SEVERE_LEVEL)
+    return `Біль у колінах доходив до ${summary.painMaximum}/10 — це сильний біль. Не тренуйся через біль і обговори стан із лікарем або фізіотерапевтом.`;
   if(summary.painMaximum!==null&&summary.painMaximum>=KNEE_PAIN_WARNING_LEVEL)
-    return `Біль у колінах доходив до ${summary.painMaximum}/10. Наступного тижня зменш навантаження на ноги, а якщо біль не минає — порадься з лікарем чи фізіотерапевтом.`;
+    return `Біль у колінах доходив до ${summary.painMaximum}/10. Наступного тижня зменш вагу й амплітуду у вправах на ноги та стеж, чи немає набряку, блокування або нестабільності. Якщо біль не минає — порадься з лікарем чи фізіотерапевтом.`;
   if(summary.workouts<WEEKLY_WORKOUT_TARGET)
     return `Тренувань ${summary.workouts} з ${WEEKLY_WORKOUT_TARGET}. Спробуй заздалегідь обрати два дні наступного тижня.`;
   const weakest=[...summary.habits].sort((a,b)=>a.days-b.days)[0];
@@ -52,8 +53,8 @@ function weeklyFocus(summary){
   return "Сильний тиждень — продовжуй у тому ж ритмі.";
 }
 
-function summaryMetricHTML(label,value,delta="",tone=""){
-  return `<div class="weekly-metric ${tone}"><span>${label}</span><strong>${value}</strong>${delta?`<small>${delta}</small>`:""}</div>`;
+function summaryMetricHTML(label,value,note="",tone=""){
+  return `<div class="weekly-metric ${tone}"><span>${label}</span><strong>${value}</strong>${note?`<small>${note}</small>`:""}</div>`;
 }
 
 function weeklySummaryHTML(weekIndex){
@@ -61,18 +62,26 @@ function weeklySummaryHTML(weekIndex){
   if(!summary)return "";
   if(!summary.hasData)return `<div class="weekly-summary-empty">Підсумок з’явиться, коли за тиждень ${weekIndex+1} буде хоч один запис.</div>`;
   const previous=weekIndex>0?weeklySummary(weekIndex-1):null,compare=previous?.hasData?previous:null;
-  const vsPrev=(current,before,digits,unit)=>compare&&current!==null&&before!==null?`${signedNumber(current-before,digits,unit)} до тиж. ${weekIndex}`:"";
+  // Change vs the previous week; nothing is shown when there is no change, to keep the cards calm.
+  const vsPrev=(current,before,digits,unit)=>{
+    if(!compare||current===null||before===null||before===undefined)return "";
+    const delta=Number((current-before).toFixed(digits));
+    return delta===0?"":`${formatSignedUk(delta,digits)}${unit} до тиж. ${weekIndex}`;
+  };
+  const coverage=days=>`${days} із 7 днів`;
+  const painTone=summary.painMaximum===null?"":summary.painMaximum>=KNEE_PAIN_SEVERE_LEVEL?"danger":summary.painMaximum>=KNEE_PAIN_WARNING_LEVEL?"warn":"";
   const metrics=[
-    summaryMetricHTML("Звички",`${summary.habitPercent}%`,vsPrev(summary.habitPercent,compare?.habitPercent,0," п.п.")),
+    summaryMetricHTML("Виконання",`${summary.completionPercent}%`,vsPrev(summary.completionPercent,compare?.completionPercent,0," п.п.")||"звички й активні дні"),
     summaryMetricHTML("Тренування",`${summary.workouts} / ${WEEKLY_WORKOUT_TARGET}`,summary.pool?`зал ${summary.gym} · басейн ${summary.pool}`:"",summary.workouts>=WEEKLY_WORKOUT_TARGET?"good":""),
     summaryMetricHTML("Активні дні",`${summary.activeDays} / 7`,vsPrev(summary.activeDays,compare?.activeDays,0,"")),
-    summaryMetricHTML("Сон",formatSleepAverage(summary.sleepAverage),vsPrev(summary.sleepAverage,compare?.sleepAverage,1," год")),
-    summaryMetricHTML("Енергія",summary.energyAverage===null?"—":`${summary.energyAverage.toFixed(1).replace(".",",")} / 10`,vsPrev(summary.energyAverage,compare?.energyAverage,1,"")),
-    summaryMetricHTML("Біль у колінах",summary.painMaximum===null?"—":`макс. ${summary.painMaximum} / 10`,"",summary.painMaximum!==null&&summary.painMaximum>=KNEE_PAIN_WARNING_LEVEL?"warn":""),
-    summaryMetricHTML("Вага за тиждень",summary.weightChange===null?"—":signedNumber(summary.weightChange,1," кг"),"",summary.weightChange!==null&&summary.weightChange<0?"good":"")
+    summaryMetricHTML("Сон",formatSleepAverage(summary.sleepAverage),vsPrev(summary.sleepAverage,compare?.sleepAverage,1," год")||coverage(summary.sleepDays)),
+    summaryMetricHTML("Енергія",summary.energyAverage===null?"—":`${formatNumberUk(summary.energyAverage,1)} / 10`,vsPrev(summary.energyAverage,compare?.energyAverage,1,"")||coverage(summary.energyDays)),
+    summaryMetricHTML("Коліна",summary.painMaximum===null?"—":`макс. ${summary.painMaximum} / 10`,summary.painAverage===null?"":`середнє ${formatNumberUk(summary.painAverage,1)}`,painTone),
+    summaryMetricHTML("Вага за тиждень",summary.weightChange===null?"—":`${formatSignedUk(summary.weightChange,1)} кг`,"",summary.weightChange!==null&&summary.weightChange<0?"good":"")
   ].join("");
   const habits=summary.habits.map(habit=>`<li><span>${habit.label}</span><span class="weekly-habit-bar" style="--fill:${Math.round(habit.days/7*100)}%"></span><strong>${habit.days}/7</strong></li>`).join("");
-  return `<div class="weekly-metrics">${metrics}</div><ul class="weekly-habits">${habits}</ul><p class="weekly-focus">${escapeNote(weeklyFocus(summary))}</p>`;
+  const focusTone=painTone?` ${painTone}`:"";
+  return `<p class="weekly-coverage">Самопочуття заповнено повністю: ${coverage(summary.completeDays)}</p><div class="weekly-metrics">${metrics}</div><ul class="weekly-habits">${habits}</ul><p class="weekly-focus${focusTone}">${escapeNote(weeklyFocus(summary))}</p>`;
 }
 
 function renderWeeklySummary(){

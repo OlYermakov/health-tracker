@@ -287,10 +287,11 @@ test("weekly summary counts habits, workouts and wellbeing and compares weeks",a
     const record=(weekIndex,day,kind)=>({id:makeId("w"),programId:enhancements.programId,weekIndex,kind,planKey:kind==="pool"?"POOL":"A",day:String(day),completedAt:new Date().toISOString(),exercises:[]});
     enhancements.history.push(record(0,2,"gym"),record(1,2,"gym"),record(1,5,"pool"));
     currentWeek=2;renderAll();
-    return {summary:weeklySummary(1),focus:weeklyFocus(weeklySummary(1)),focusWeek1:weeklyFocus(weeklySummary(0)),
+    return {summary:weeklySummary(1),ring:Math.round(completionOf(state.weeks[1])*100),ringPrev:Math.round(completionOf(state.weeks[0])*100),
+      focus:weeklyFocus(weeklySummary(1)),focusWeek1:weeklyFocus(weeklySummary(0)),
       html:document.getElementById("weeklySummaryContent").textContent,title:document.getElementById("weeklySummaryTitle").textContent};
   });
-  assert.equal(result.summary.habitPercent,Math.round(11/21*100));
+  assert.equal(result.summary.completionPercent,result.ring,"same number as the 'Виконання тижня' ring");
   assert.deepEqual([result.summary.workouts,result.summary.gym,result.summary.pool],[2,1,1]);
   assert.equal(result.summary.sleepAverage,7.5);
   assert.equal(result.summary.painMaximum,5);
@@ -298,7 +299,9 @@ test("weekly summary counts habits, workouts and wellbeing and compares weeks",a
   assert.match(result.focus,/коліна/,"knee pain has priority");
   assert.match(result.focusWeek1,/Тренувань 1 з 2/);
   assert.equal(result.title,"Підсумок тижня 2");
-  assert.match(result.html,/\+19 п\.п\. до тиж\. 1/,"habit change vs previous week");
+  assert.ok(result.html.includes(`+${result.ring-result.ringPrev} п.п. до тиж. 1`),"completion change vs previous week");
+  assert.doesNotMatch(result.html,/±0/,"no-change deltas are hidden");
+  assert.match(result.html,/середнє 5,0/,"knee average with decimal comma");
   assert.match(result.html,/\+1,5 год до тиж\. 1/,"sleep change vs previous week");
   assert.match(result.html,/−0,6 кг/);
   await page.context().close();
@@ -345,4 +348,29 @@ test("reminder buttons on the Today screen work",async()=>{
   await page.waitForFunction(()=>!document.querySelector('[data-reminder="backup"]'));
   assert.deepEqual(page.errors,[]);
   await page.context().close();
+});
+
+test("severe knee pain gives a stronger weekly warning",async()=>{
+  const page=await env.newPage();
+  const focus=await page.evaluate(()=>{state.weeks[0].days[0].water=true;enhancements.weeks[0].dailyWellbeing[1].painRight="8";return weeklyFocus(weeklySummary(0));});
+  assert.match(focus,/сильний біль/);
+  await page.context().close();
+});
+
+test("numbers use a decimal comma and a real minus sign",async()=>{
+  const page=await env.newPage();
+  const out=await page.evaluate(()=>{state.weeks[0].startWeight="93";state.weeks[0].endWeight="91.6";renderAll();
+    return {start:document.getElementById("cardStart").textContent,delta:document.getElementById("cardDelta").textContent,
+      a:formatNumberUk(-0.04,1),b:formatSignedUk(0.25,1),c:formatDecimal(-1.8,1),flat:trendComparison([5000,5010,4990,5000]).text};});
+  assert.deepEqual(out,{start:"93,0 кг",delta:"−1,4 кг",a:"0,0",b:"+0,3",c:"−1,8",flat:"→ без змін до попереднього періоду"});
+  await page.context().close();
+});
+
+test("week table fits its card on desktop widths",async()=>{
+  for(const width of [1101,1280,1440]){
+    const page=await env.newPage({viewport:{width,height:900}});
+    const fit=await page.evaluate(()=>{const table=document.querySelector("#tracker table");return table.scrollWidth<=table.parentElement.clientWidth;});
+    assert.equal(fit,true,`table overflows at ${width}px`);
+    await page.context().close();
+  }
 });

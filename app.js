@@ -252,6 +252,15 @@ function completionOf(w){
   done+=Math.min(activityCount(w),WEEKLY_ACTIVITY_TARGET);
   return done/(21+WEEKLY_ACTIVITY_TARGET);
 }
+// Ukrainian number formatting: decimal comma and a real minus sign ("−1,4").
+function formatNumberUk(value,digits=1){
+  const rounded=Number(Number(value).toFixed(digits));
+  return `${rounded<0?"−":""}${Math.abs(rounded).toFixed(digits).replace(".",",")}`;
+}
+function formatSignedUk(value,digits=1){
+  const rounded=Number(Number(value).toFixed(digits));
+  return rounded>0?`+${formatNumberUk(rounded,digits)}`:formatNumberUk(rounded,digits);
+}
 function weightNumber(v){
   if(v===null||v===undefined||v==="") return null;
   const n=Number(String(v).replace(",","."));
@@ -268,7 +277,7 @@ function programWeightStats(){
     finalDelta:start!==null&&final!==null?final-start:null
   };
 }
-function formatWeightDelta(delta){return delta===null?"—":`${delta>0?"+":""}${delta.toFixed(1)} кг`;}
+function formatWeightDelta(delta){return delta===null?"—":`${formatSignedUk(delta,1)} кг`;}
 
 function saveNotes(){writeUnifiedSection("notes",dayNotes);}
 function escapeNote(value){
@@ -358,8 +367,8 @@ function renderWeekNav(){
 function renderCards(){
   const w=state.weeks[currentWeek-1],pct=completionOf(w);
   const weights=programWeightStats();
-  document.getElementById("cardStart").textContent=weights.start!==null?weights.start.toFixed(1)+" кг":"—";
-  document.getElementById("cardCurrent").textContent=weights.current!==null?weights.current.toFixed(1)+" кг":"—";
+  document.getElementById("cardStart").textContent=weights.start!==null?formatNumberUk(weights.start,1)+" кг":"—";
+  document.getElementById("cardCurrent").textContent=weights.current!==null?formatNumberUk(weights.current,1)+" кг":"—";
   const deltaEl=document.getElementById("cardDelta");
   deltaEl.textContent=formatWeightDelta(weights.currentDelta);
   deltaEl.style.color=weights.currentDelta!==null&&weights.currentDelta<0?"var(--green)":"var(--red)";
@@ -487,7 +496,7 @@ function drawWeightChart(values,minY,maxY){
   const c=document.getElementById("weightChart"),{ctx,w,h}=fitCanvas(c);ctx.clearRect(0,0,w,h);
   const pad={l:42,r:16,t:14,b:30},iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
   ctx.strokeStyle="rgba(255,255,255,.08)";ctx.lineWidth=1;ctx.fillStyle="#9fb0c6";ctx.font="11px system-ui";ctx.textAlign="right";
-  for(let i=0;i<=4;i++){const y=pad.t+ih*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();const v=maxY-(maxY-minY)*i/4;ctx.fillText(v.toFixed(0),pad.l-8,y+4);}
+  for(let i=0;i<=4;i++){const y=pad.t+ih*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();const v=maxY-(maxY-minY)*i/4;ctx.fillText(formatNumberUk(v,(maxY-minY)/4>=1?0:1),pad.l-8,y+4);}
   ctx.textAlign="center";for(let i=0;i<12;i++){const x=pad.l+iw*(i/11);ctx.fillText(String(i+1),x,h-10);}
   const valid=values.map((v,i)=>({v,i})).filter(x=>x.v!==null);if(!valid.length)return;
   const xy=item=>({x:pad.l+iw*(item.i/11),y:pad.t+ih*(1-(item.v-minY)/(maxY-minY))});

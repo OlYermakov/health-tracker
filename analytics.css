@@ -40,3 +40,7 @@
 }
 @media(max-width:390px){.analytics-kpi-grid{grid-template-columns:1fr 1fr}.analytics-kpi{padding:11px}.analytics-kpi>span{font-size:11px}.analytics-kpi strong{font-size:22px}.sleep-composition{grid-template-columns:1fr}.sleep-donut-center{margin:auto}.gait-metric-list{grid-template-columns:1fr}.analytics-period button{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.analytics-view{animation:none}}
+.analytics-workout .workout-source{align-self:flex-start;line-height:1.25}
+/* Hint that more analytics tabs are hidden to the right on narrow screens. */
+.analytics-tabs.has-more{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+@media(max-width:720px){.analytics-tabs{grid-template-columns:repeat(7,minmax(80px,1fr))}.analytics-tabs button{min-width:80px}}

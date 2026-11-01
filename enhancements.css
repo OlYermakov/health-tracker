@@ -12,7 +12,7 @@
 .today-panel{margin-top:18px;padding:22px;scroll-margin-top:78px}
 .today-heading,.history-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .today-heading h2,.history-heading h2{margin:6px 0 0;font-size:25px}
-.today-date{color:var(--muted);font-weight:800;font-size:13px;text-transform:capitalize}
+.today-date{color:var(--muted);font-weight:800;font-size:13px}
 .today-context{margin-top:15px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .today-context span{color:var(--muted);font-size:12px}
 .today-grid{display:grid;grid-template-columns:repeat(4,minmax(135px,1fr));gap:9px;margin-top:12px}
@@ -37,13 +37,11 @@
 .program-settings{margin-top:18px;padding:16px 20px;display:flex;align-items:end;justify-content:space-between;gap:18px}
 .date-range{font-size:17px;font-weight:850;margin-top:7px;color:var(--text)}
 .mobile-table-hint{display:none;color:var(--muted);font-size:12px;margin:0 0 10px}
-.wellbeing-panel{margin-top:18px;padding:22px;display:grid;grid-template-columns:minmax(220px,.65fr) 1.35fr;gap:26px;align-items:end}
-.wellbeing-panel h2,.summary-section h2{margin:7px 0 7px;font-size:22px}
-.wellbeing-panel p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
-.wellbeing-grid{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px;align-items:end}
-.wellbeing-summary-card{min-height:92px;padding:13px 14px;display:grid;align-content:center;gap:5px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.035)}.wellbeing-summary-card span{color:var(--muted);font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.wellbeing-summary-card strong{font-size:18px}.wellbeing-summary-card small{color:var(--muted);font-size:12px}
+
+.summary-section h2{margin:7px 0 7px;font-size:22px}
+
 .daily-wellbeing-cell{min-width:250px}.daily-wellbeing-grid{display:grid;grid-template-columns:repeat(2,minmax(96px,1fr));gap:6px}.daily-wellbeing-grid label{display:grid;gap:3px;min-width:0}.daily-wellbeing-grid label>span{color:var(--muted);font-size:11px;font-weight:800}.daily-wellbeing-grid input,.daily-wellbeing-grid select{width:100%;min-width:0;height:34px;padding:6px 7px;border-radius:9px;font-size:12px}
-.pain-warning{grid-column:1/-1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,209,102,.3);background:rgba(255,209,102,.07);color:var(--amber);font-size:13px;line-height:1.45}
+
 .summary-section{margin-top:18px;padding:22px}
 .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-top:14px}
 .summary-card{padding:15px;border-radius:17px;border:1px solid var(--line);background:rgba(255,255,255,.035);display:grid;gap:7px}
@@ -69,7 +67,7 @@
 .history-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
 .history-card{padding:16px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.035)}
 .history-card-top{display:flex;justify-content:space-between;gap:12px}
-.history-card-top>div:first-child>span{color:var(--muted);font-size:12px;text-transform:capitalize}.history-card h3{margin:4px 0 0;font-size:19px}
+.history-card-top>div:first-child>span{color:var(--muted);font-size:12px}.history-card h3{margin:4px 0 0;font-size:19px}
 .history-metrics{display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end}.history-metrics span{padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);font-size:12px;font-weight:800}
 .history-metrics .pain-high{color:var(--amber);background:rgba(255,209,102,.09)}.history-card li .history-skipped{color:var(--amber)}
 .pool-history-card{border-color:rgba(94,210,255,.22);background:linear-gradient(135deg,rgba(94,210,255,.07),rgba(255,255,255,.025))}.history-pool-note{margin:10px 0 0;padding:10px 11px;border-radius:11px;background:rgba(255,255,255,.035);color:var(--muted);font-size:12px;line-height:1.5;white-space:pre-wrap}
@@ -83,7 +81,7 @@
 :focus-visible{outline:3px solid rgba(121,231,255,.72);outline-offset:3px}
 
 @media(max-width:1100px){
-  .wellbeing-panel{grid-template-columns:1fr}.wellbeing-grid{grid-template-columns:repeat(2,1fr)}
+  
 }
 @media(max-width:720px){
   html{scroll-padding-top:max(10px,env(safe-area-inset-top,0px))}
@@ -182,14 +180,14 @@
   .table-wrap .day-note{min-height:44px;padding:11px 12px;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.07)}
   .daily-wellbeing-cell{min-width:0}.daily-wellbeing-grid{grid-template-columns:1fr 1fr;gap:8px}.daily-wellbeing-grid input,.daily-wellbeing-grid select{height:42px;font-size:13px}
   .ring-wrap{gap:12px}.ring{transform:scale(.92);margin:-6px}
-  .today-panel,.wellbeing-panel,.summary-section,.history-section{margin-top:12px;padding:15px}
+  .today-panel,.summary-section,.history-section{margin-top:12px;padding:15px}
   .today-heading h2,.history-heading h2{font-size:22px}.today-date{font-size:12px;text-align:right}
   .today-grid{grid-template-columns:1fr 1fr;gap:8px}.today-habit{min-width:0;padding:9px;font-size:12px}
   .today-section-heading{display:grid;gap:3px}.today-section-heading span{text-align:left}.today-wellbeing .daily-wellbeing-grid{grid-template-columns:1fr 1fr;gap:8px}.today-wellbeing .daily-wellbeing-grid input,.today-wellbeing .daily-wellbeing-grid select,.today-note textarea{font-size:16px}
   .today-workouts,.history-list{grid-template-columns:1fr}.today-workout{padding:12px}.today-workout button{min-height:42px}
-  .wellbeing-panel{gap:16px}
-  .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr;gap:9px}
-  .wellbeing-summary-card{min-width:0;min-height:88px}
+  
+  .summary-grid{grid-template-columns:1fr 1fr;gap:9px}
+  
   .summary-card{padding:13px;min-width:0}
   .summary-card strong{font-size:19px}
   .program-lifecycle{align-items:stretch;flex-direction:column}.program-lifecycle button{width:100%}.program-archive-card>header{display:grid}.program-archive-card>header>div:last-child{text-align:left}.backup-reminder{align-items:stretch;flex-direction:column}.backup-reminder button{width:100%}
@@ -211,7 +209,7 @@
 }
 @keyframes screen-in{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media(max-width:430px){
-  .wellbeing-grid,.summary-grid{grid-template-columns:1fr 1fr}
+  .summary-grid{grid-template-columns:1fr 1fr}
   .week-top{grid-template-columns:1fr 1fr}
   .today-grid{grid-template-columns:1fr 1fr}.today-habit{font-size:12px}.today-habit span{width:22px;height:22px;flex:0 0 auto}
   .set-row{grid-template-columns:25px minmax(0,1fr) minmax(0,1.15fr) 44px;gap:5px}.set-row label>span{font-size:11px}.set-row input{padding:6px;font-size:12px}
@@ -249,3 +247,26 @@
 .weekly-focus{margin:14px 0 0;padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.04);font-size:14px;line-height:1.45}
 .weekly-summary-empty{color:var(--muted);font-size:14px}
 @media(max-width:430px){.weekly-metrics{grid-template-columns:1fr 1fr}.today-reminders li{flex-direction:column;align-items:stretch}.today-reminders .btn{width:100%}}
+/* Desktop week table: keep it inside its card. */
+@media(min-width:1101px){
+  .daily-wellbeing-cell{min-width:220px}
+  .note-cell{min-width:0;width:100%}
+  .day-note{min-width:150px}
+}
+/* Between tablet and wide desktop the table needs the full width; the sidebar moves below it. */
+@media(min-width:1101px) and (max-width:1279px){
+  #tracker>.layout{grid-template-columns:1fr}
+  #tracker .dash-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #tracker .dash-side .ring-wrap{grid-template-columns:150px 1fr;justify-items:stretch}
+}
+/* Phones: title on its own line, metric chips below it, so "Тренування A" never wraps. */
+@media(max-width:620px){
+  .history-card-top{flex-direction:column;gap:9px}
+  .history-card-top h3{white-space:nowrap}
+  .history-metrics{justify-content:flex-start}
+}
+.weekly-coverage{margin:-6px 0 12px;color:var(--muted);font-size:13px}
+.weekly-metric.danger{border-color:rgba(255,107,129,.4)}
+.weekly-metric.danger strong{color:#ff9aa9}
+.weekly-focus.warn{border:1px solid rgba(255,170,110,.32);background:rgba(255,170,110,.08)}
+.weekly-focus.danger{border:1px solid rgba(255,107,129,.4);background:rgba(255,107,129,.08)}

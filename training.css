@@ -99,3 +99,9 @@ a{color:inherit}
   .pool-session-dialog{inset:0;width:100vw;height:100dvh;max-height:none;margin:0;border:0;border-radius:0}.pool-session-shell{height:100%;max-height:none}.pool-session-header{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 11px max(12px,env(safe-area-inset-left))}.pool-intro{margin:14px 12px 0}.pool-intro h2{font-size:21px}.pool-form-grid{margin:14px 12px 0;grid-template-columns:1fr}.pool-knee-panel,.pool-safety-note,.pool-notes{margin:10px 12px 0}.pool-pain-grid{grid-template-columns:1fr 1fr}.pool-actions{padding:11px max(12px,env(safe-area-inset-right)) max(11px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.pool-actions button{flex:1}
 }
 .technique-details>summary{padding:12px 0;cursor:pointer}
+.guided-visual{display:block;padding:0;cursor:zoom-in;color:inherit}
+/* Phones: a compact photo keeps the set inputs on the first screen; tap opens it full size. */
+@media(max-width:620px){
+  .guided-visual{width:100%;height:190px;aspect-ratio:auto}
+  .guided-visual img{object-fit:contain}
+}
