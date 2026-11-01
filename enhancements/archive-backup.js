@@ -43,13 +43,44 @@ function archiveCurrentProgram(){
   migrateUnifiedStore();closeGuidedWorkout();renderAll();window.scrollTo({top:0,behavior:"smooth"});showToast("Програму архівовано. Нова 12-тижнева програма готова.");
 }
 
-async function exportBackup(){
+async function buildBackupFile(){
   try{await navigator.storage?.persist?.();}catch(e){}
   const analytics=typeof getHealthAnalyticsBackup==="function"?await getHealthAnalyticsBackup():null;
   const payload={format:"health-tracker-backup",version:ENHANCEMENTS_VERSION,exportedAt:new Date().toISOString(),tracker:state,notes:dayNotes,enhancements,analytics};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");
-  link.href=url;link.download=`health-tracker-backup-${localISODate()}.json`;link.click();URL.revokeObjectURL(url);
-  enhancements.lastBackupAt=new Date().toISOString();persistEnhancements();renderSummary();showToast("Резервну копію завантажено.");
+  return new File([JSON.stringify(payload,null,2)],`health-tracker-backup-${localISODate()}.json`,{type:"application/json"});
+}
+
+function markBackupDone(message){
+  enhancements.lastBackupAt=new Date().toISOString();persistEnhancements();renderSummary();showToast(message);
+}
+
+function downloadBackupFile(file){
+  const url=URL.createObjectURL(file),link=document.createElement("a");
+  link.href=url;link.download=file.name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function exportBackup(){
+  downloadBackupFile(await buildBackupFile());
+  markBackupDone("Резервну копію завантажено.");
+}
+
+function canShareBackupFiles(){
+  try{return typeof navigator.share==="function"&&navigator.canShare?.({files:[new File(["{}"],"backup.json",{type:"application/json"})]})===true;}
+  catch(e){return false;}
+}
+
+// Opens the system share sheet (Files / iCloud Drive / Messages / Mail) with the backup file.
+async function shareBackup(){
+  const file=await buildBackupFile();
+  try{
+    await navigator.share({files:[file],title:"Резервна копія health tracker"});
+    markBackupDone("Резервну копію передано.");
+  }catch(error){
+    if(error?.name==="AbortError")return;
+    // Sharing is unavailable or was blocked: fall back to a regular download.
+    downloadBackupFile(file);
+    markBackupDone("Поділитися не вдалося, тому копію завантажено.");
+  }
 }
 
 async function importBackup(file){

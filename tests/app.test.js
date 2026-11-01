@@ -153,3 +153,58 @@ test("guided workout, pool session and history undo work end to end",async()=>{
   assert.deepEqual(page.errors,[]);
   await page.context().close();
 });
+
+test("progression hint suggests more weight only after the top of the rep range",async()=>{
+  const page=await env.newPage();
+  const hint=(sets,pain={})=>page.evaluate(({sets,pain})=>progressionHint("A",1,{sets,record:{painAfterLeft:pain.left??"",painAfterRight:pain.right??""}}),{sets,pain});
+  // Chest press "2 × 10–12".
+  assert.equal((await hint([{weight:"40",reps:"12",done:true},{weight:"40",reps:"12",done:true}])).type,"up");
+  assert.match((await hint([{weight:"40",reps:"12",done:true},{weight:"40",reps:"12",done:true}])).text,/42,5 кг/);
+  assert.equal((await hint([{weight:"40",reps:"12",done:true},{weight:"40",reps:"10",done:true}])).type,"keep");
+  assert.equal((await hint([{weight:"40",reps:"12",done:true},{weight:"40",reps:"12",done:false}])).type,"keep","unfinished set");
+  assert.equal(await hint([{weight:"",reps:"12",done:true},{weight:"40",reps:"12",done:true}]),null,"missing weight");
+  assert.equal(await page.evaluate(()=>progressionHint("A",0,{sets:[{weight:"5",reps:"6 хв",done:true}]})),null,"no hint for warm-up cardio");
+  // Leg press (tag "Ноги") holds the weight after knee pain; chest press does not.
+  const legIndex=await page.evaluate(()=>WORKOUT_PLANS.A.exercises.findIndex(exercise=>exercise.tag==="Ноги"&&/2 ×/.test(exercise.dose)));
+  const legTop=await page.evaluate(index=>{const target=prescribedRepTarget(WORKOUT_PLANS.A.exercises[index]);return [{weight:"60",reps:String(target),done:true},{weight:"60",reps:String(target),done:true}];},legIndex);
+  assert.equal((await page.evaluate(({legIndex,legTop})=>progressionHint("A",legIndex,{sets:legTop,record:{painAfterLeft:"5",painAfterRight:"1"}}),{legIndex,legTop})).type,"hold");
+  assert.equal((await hint([{weight:"40",reps:"12",done:true},{weight:"40",reps:"12",done:true}],{left:"5"})).type,"up");
+  await page.context().close();
+});
+
+test("progression hint is shown on the training screen after a finished workout",async()=>{
+  const page=await env.newPage();
+  await page.evaluate(()=>{
+    startGuidedWorkout("A");setGuidedDay("0");
+    for(let exercise=1;exercise<5;exercise++)exerciseLog(currentWeek-1,"A",exercise).sets.forEach((set,index)=>{set.weight="40";set.reps="15";toggleExerciseSet("A",exercise,index,true);});
+    finishGuidedWorkout();currentWeek=2;renderAll();
+  });
+  await page.click("[data-app-screen=training]");
+  const text=await page.locator("#workoutPlan .exercise-card").nth(1).locator(".progression-hint").textContent();
+  assert.match(text,/можна спробувати 42,5 кг/);
+  await page.context().close();
+});
+
+test("share button uses the system share sheet when files can be shared",async()=>{
+  const page=await env.newPage({init:{fn:()=>{
+    window.__shared=[];
+    navigator.canShare=()=>true;
+    navigator.share=async data=>{window.__shared.push({name:data.files[0].name,text:await data.files[0].text()});};
+  }}});
+  await page.click("[data-app-screen=more]");
+  await page.click("#more [data-share-backup]");
+  await page.waitForFunction(()=>window.__shared.length===1);
+  const shared=await page.evaluate(()=>window.__shared[0]);
+  assert.match(shared.name,/^health-tracker-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  assert.equal(JSON.parse(shared.text).format,"health-tracker-backup");
+  assert.ok(await page.evaluate(()=>enhancements.lastBackupAt),"backup date is recorded");
+  await page.context().close();
+});
+
+test("share button is hidden where file sharing is unsupported",async()=>{
+  const page=await env.newPage({init:{fn:()=>{navigator.canShare=()=>false;}}});
+  await page.click("[data-app-screen=more]");
+  assert.equal(await page.locator("#more [data-share-backup]").isVisible(),false);
+  assert.equal(await page.locator("#more .mobile-data-actions .btn").first().isVisible(),true);
+  await page.context().close();
+});

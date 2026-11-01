@@ -286,7 +286,7 @@ function wireAnalyticsControls(){
 async function startHealthImport(file){
   if(!file)return;const progress=document.getElementById("healthImportProgress"),bar=document.getElementById("healthImportProgressBar"),value=document.getElementById("healthImportProgressValue"),label=document.getElementById("healthImportProgressLabel"),button=document.getElementById("healthImportButton");
   progress.hidden=false;bar.value=0;value.textContent="0%";label.textContent="Перевіряю файл…";button.disabled=true;
-  const worker=new Worker("./health-import-worker.js?v=34");
+  const worker=new Worker("./health-import-worker.js?v=35");
   worker.onmessage=async event=>{
     if(event.data?.type==="progress"){bar.value=event.data.percent||0;value.textContent=`${event.data.percent||0}%`;label.textContent=event.data.label||"Обробка…";return;}
     if(event.data?.type==="error"){worker.terminate();progress.hidden=true;button.disabled=false;showToast(event.data.message||"Не вдалося імпортувати Apple Health.");return;}

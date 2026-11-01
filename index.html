@@ -13,11 +13,11 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<link rel="stylesheet" href="style.css?v=34" />
-<link rel="stylesheet" href="training.css?v=34" />
-<link rel="stylesheet" href="notes.css?v=34" />
-<link rel="stylesheet" href="enhancements.css?v=34" />
-<link rel="stylesheet" href="analytics.css?v=34" />
+<link rel="stylesheet" href="style.css?v=35" />
+<link rel="stylesheet" href="training.css?v=35" />
+<link rel="stylesheet" href="notes.css?v=35" />
+<link rel="stylesheet" href="enhancements.css?v=35" />
+<link rel="stylesheet" href="analytics.css?v=35" />
 </head>
 <body>
 <div class="shell">
@@ -33,6 +33,7 @@
     <div class="data-menu-popover">
       <strong>Дані застосунку</strong>
       <button class="btn" id="exportBackup" type="button">Зберегти копію</button>
+      <button class="btn" id="shareBackup" type="button" data-share-backup hidden>Поділитися копією</button>
       <button class="btn" id="importBackup" type="button">Відновити з файла</button>
     </div>
   </details>
@@ -307,6 +308,7 @@
         <div class="mobile-data-actions">
           <button class="btn" type="button" onclick="exportBackup()">Зберегти копію</button>
           <button class="btn" type="button" onclick="document.getElementById('backupFile').click()">Відновити з файла</button>
+          <button class="btn share-backup" type="button" data-share-backup hidden>Поділитися копією (Файли, iCloud, пошта)</button>
         </div>
       </section>
 
@@ -350,16 +352,16 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="app.js?v=34"></script>
-<script src="exercise-details.js?v=34"></script>
-<script src="enhancements/model.js?v=34"></script>
-<script src="enhancements/core.js?v=34"></script>
-<script src="enhancements/training-log.js?v=34"></script>
-<script src="enhancements/history.js?v=34"></script>
-<script src="enhancements/pool.js?v=34"></script>
-<script src="enhancements/guided-workout.js?v=34"></script>
-<script src="enhancements/archive-backup.js?v=34"></script>
-<script src="enhancements/init.js?v=34"></script>
-<script src="analytics.js?v=34"></script>
+<script src="app.js?v=35"></script>
+<script src="exercise-details.js?v=35"></script>
+<script src="enhancements/model.js?v=35"></script>
+<script src="enhancements/core.js?v=35"></script>
+<script src="enhancements/training-log.js?v=35"></script>
+<script src="enhancements/history.js?v=35"></script>
+<script src="enhancements/pool.js?v=35"></script>
+<script src="enhancements/guided-workout.js?v=35"></script>
+<script src="enhancements/archive-backup.js?v=35"></script>
+<script src="enhancements/init.js?v=35"></script>
+<script src="analytics.js?v=35"></script>
 </body>
 </html>

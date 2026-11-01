@@ -54,12 +54,54 @@ function previousExerciseResult(weekIndex,planKey,exerciseIndex){
   const recorded=currentProgramHistory()
     .filter(record=>record.planKey===planKey&&record.exercises?.[exerciseIndex]?.sets?.some(set=>set.weight||set.reps||set.done))
     .sort((a,b)=>new Date(b.performedDate||b.completedAt).getTime()-new Date(a.performedDate||a.completedAt).getTime())[0];
-  if(recorded)return {week:recorded.weekIndex+1,date:recorded.performedDate||recorded.completedAt,text:recorded.exercises[exerciseIndex].sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
+  if(recorded)return {week:recorded.weekIndex+1,date:recorded.performedDate||recorded.completedAt,sets:recorded.exercises[exerciseIndex].sets,record:recorded,text:recorded.exercises[exerciseIndex].sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
   for(let index=weekIndex-1;index>=0;index--){
     const log=exerciseLog(index,planKey,exerciseIndex);
-    if(log?.sets?.some(set=>set.weight||set.reps||set.done))return {week:index+1,text:log.sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
+    if(log?.sets?.some(set=>set.weight||set.reps||set.done))return {week:index+1,sets:log.sets,record:null,text:log.sets.map(set=>formatSet(set,planKey,exerciseIndex)).join(" · ")};
   }
   return null;
+}
+
+const PROGRESSION_STEP_KG=2.5;
+const KNEE_PAIN_HOLD_LEVEL=4;
+const KNEE_LOADED_TAGS=["Ноги","Сідниці"];
+
+// Upper bound of the prescribed rep range: "2 × 10–12" -> 12, "2 × 10 / сторона" -> 10.
+function prescribedRepTarget(exercise){
+  const match=String(exercise?.dose||"").match(/[×x]\s*(\d+)(?:\s*[–-]\s*(\d+))?/i);
+  return match?Number(match[2]||match[1]):null;
+}
+
+function leadingNumber(value){
+  const match=String(value??"").replace(",",".").match(/\d+(?:\.\d+)?/);
+  return match?Number(match[0]):null;
+}
+
+function formatKg(value){return `${Number.isInteger(value)?value:value.toFixed(1).replace(".",",")} кг`;}
+
+// Suggests the next working weight from the previous result (double progression):
+// once every prescribed set hit the top of the rep range, add a small step.
+function progressionHint(planKey,exerciseIndex,previous){
+  const exercise=WORKOUT_PLANS[planKey]?.exercises?.[exerciseIndex];
+  if(!exercise||exerciseIndex===0||!previous?.sets?.length)return null;
+  const target=prescribedRepTarget(exercise);
+  if(!target)return null;
+  const sets=previous.sets.slice(0,prescribedSetCount(exercise));
+  if(sets.length<prescribedSetCount(exercise))return null;
+  const weights=sets.map(set=>leadingNumber(set.weight)),reps=sets.map(set=>leadingNumber(set.reps));
+  if(weights.some(value=>value===null)||reps.some(value=>value===null))return null;
+  const weight=Math.max(...weights);
+  const kneePain=Math.max(leadingNumber(previous.record?.painAfterLeft)??0,leadingNumber(previous.record?.painAfterRight)??0);
+  if(KNEE_LOADED_TAGS.includes(exercise.tag)&&kneePain>=KNEE_PAIN_HOLD_LEVEL)
+    return {type:"hold",text:`Після минулого тренування коліно боліло на ${kneePain}/10 — залиш ${formatKg(weight)} і стеж за відчуттями.`};
+  const allTop=sets.every((set,index)=>set.done&&reps[index]>=target);
+  if(allTop)return {type:"up",text:`Усі підходи на ${target} повторів — можна спробувати ${formatKg(weight+PROGRESSION_STEP_KG)}.`};
+  return {type:"keep",text:`Залиш ${formatKg(weight)}, доки всі підходи не дійдуть до ${target} повторів.`};
+}
+
+function progressionHintHTML(planKey,exerciseIndex,previous){
+  const hint=progressionHint(planKey,exerciseIndex,previous);
+  return hint?`<div class="progression-hint ${hint.type}">${escapeNote(hint.text)}</div>`:"";
 }
 
 function setRowsHTML(planKey,exerciseIndex,log,guided=false){
@@ -85,7 +127,7 @@ function injectExerciseLogs(){
     if(!main||main.querySelector(".set-log"))return;
     const previous=previousExerciseResult(currentWeek-1,currentPlan,index);
     const wrap=document.createElement("div");wrap.className="set-log";
-    wrap.innerHTML=`<div class="previous-result"><span>Минулого разу</span><strong>${previous?`Тиждень ${previous.week}: ${escapeNote(previous.text)}`:"Ще немає запису"}</strong></div><div class="set-list">${setRowsHTML(currentPlan,index,logs[index])}</div>`;
+    wrap.innerHTML=`<div class="previous-result"><span>Минулого разу</span><strong>${previous?`Тиждень ${previous.week}: ${escapeNote(previous.text)}`:"Ще немає запису"}</strong></div>${progressionHintHTML(currentPlan,index,previous)}<div class="set-list">${setRowsHTML(currentPlan,index,logs[index])}</div>`;
     main.insertBefore(wrap,details||null);
   });
   document.getElementById("tabA").setAttribute("aria-selected",String(currentPlan==="A"));
