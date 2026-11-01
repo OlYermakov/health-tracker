@@ -1,10 +1,13 @@
-const VERSION="33";
+const VERSION="34";
 const CACHE_NAME=`health-tracker-v${VERSION}`;
 const APP_SHELL=[
   "./","./index.html",
   ...["style.css","training.css","notes.css","enhancements.css","analytics.css",
-    "app.js","exercise-details.js","enhancements.js","analytics.js","health-import-worker.js"].map(file=>`./${file}?v=${VERSION}`),
+    "app.js","exercise-details.js",
+    ...["model","core","training-log","history","pool","guided-workout","archive-backup","init"].map(name=>`enhancements/${name}.js`),
+    "analytics.js","health-import-worker.js"].map(file=>`./${file}?v=${VERSION}`),
   "./manifest.webmanifest","./icon.svg",
+  ...["icon-192.png","icon-512.png","icon-maskable-512.png","apple-touch-icon.png"].map(file=>`./icons/${file}`),
   ...["stationary-bike","chest-press","seated-row","leg-curl","leg-press","hip-thrust",
     "pallof-press","elliptical","lat-pulldown","shoulder-press","hip-abduction","face-pull"].map(name=>`./assets/exercises/${name}.webp`)
 ];
