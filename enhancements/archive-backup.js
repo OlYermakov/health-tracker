@@ -51,7 +51,7 @@ async function buildBackupFile(){
 }
 
 function markBackupDone(message){
-  enhancements.lastBackupAt=new Date().toISOString();persistEnhancements();renderSummary();showToast(message);
+  enhancements.lastBackupAt=new Date().toISOString();persistEnhancements();renderSummary();refreshInsights();showToast(message);
 }
 
 function downloadBackupFile(file){

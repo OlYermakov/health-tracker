@@ -1,10 +1,10 @@
-const VERSION="36";
+const VERSION="37";
 const CACHE_NAME=`health-tracker-v${VERSION}`;
 const APP_SHELL=[
   "./","./index.html",
   ...["style.css","training.css","notes.css","enhancements.css","analytics.css",
     "events.js","app.js","exercise-details.js",
-    ...["model","core","training-log","history","pool","guided-workout","archive-backup","init"].map(name=>`enhancements/${name}.js`),
+    ...["model","core","training-log","history","pool","guided-workout","archive-backup","insights","init"].map(name=>`enhancements/${name}.js`),
     "analytics.js","health-import-worker.js"].map(file=>`./${file}?v=${VERSION}`),
   "./manifest.webmanifest","./icon.svg",
   ...["icon-192.png","icon-512.png","icon-maskable-512.png","apple-touch-icon.png"].map(file=>`./icons/${file}`),

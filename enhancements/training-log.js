@@ -184,7 +184,7 @@ function toggleTodayHabit(weekIndex,dayIndex,key){
   const week=state.weeks[weekIndex];
   if(key==="activity"&&completedSessionOnDay(week,dayIndex)){showToast("Цей день уже зараховано завершеним тренуванням або басейном.");return;}
   week.days[dayIndex][key]=!week.days[dayIndex][key];persist();
-  if(currentWeek===weekIndex+1)renderAll();else{renderToday();renderSummary();}
+  if(currentWeek===weekIndex+1)renderAll();else{renderToday();renderSummary();refreshInsights();}
 }
 
 function openTodayWorkout(weekIndex,planKey,guided){

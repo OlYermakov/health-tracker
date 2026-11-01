@@ -225,3 +225,27 @@
 .progression-hint.up{color:#eafff7;border-color:rgba(66,230,164,.3);background:rgba(66,230,164,.09)}
 .progression-hint.hold{color:#ffe9d6;border-color:rgba(255,170,110,.32);background:rgba(255,170,110,.08)}
 .mobile-data-actions .share-backup{grid-column:1/-1}
+.today-reminders{margin-top:14px;padding:14px;border:1px solid rgba(121,231,255,.2);border-radius:16px;background:rgba(121,231,255,.05)}
+.today-reminders[hidden]{display:none}
+.today-reminders ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.today-reminders li{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;line-height:1.4}
+.today-reminders li+li{padding-top:8px;border-top:1px solid var(--line)}
+.today-reminders .btn{flex:0 0 auto;width:auto;min-height:44px;padding:8px 12px;font-size:13px}
+.weekly-summary{margin-top:18px;padding:20px;border-radius:22px;scroll-margin-top:78px}
+.weekly-summary h2{margin:6px 0 14px;font-size:22px}
+.weekly-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}
+.weekly-metric{padding:12px 13px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.035);display:grid;gap:4px}
+.weekly-metric span{color:var(--muted);font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.04em}
+.weekly-metric strong{font-size:19px}
+.weekly-metric small{color:var(--muted);font-size:12px}
+.weekly-metric.good strong{color:var(--green)}
+.weekly-metric.warn{border-color:rgba(255,170,110,.35)}
+.weekly-metric.warn strong{color:#ffc79a}
+.weekly-habits{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.weekly-habits li{display:grid;grid-template-columns:minmax(110px,150px) 1fr 36px;align-items:center;gap:10px;font-size:13px}
+.weekly-habits li span:first-child{color:var(--muted)}
+.weekly-habits strong{text-align:right}
+.weekly-habit-bar{height:8px;border-radius:999px;background:linear-gradient(90deg,var(--green) var(--fill),rgba(255,255,255,.08) var(--fill))}
+.weekly-focus{margin:14px 0 0;padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.04);font-size:14px;line-height:1.45}
+.weekly-summary-empty{color:var(--muted);font-size:14px}
+@media(max-width:430px){.weekly-metrics{grid-template-columns:1fr 1fr}.today-reminders li{flex-direction:column;align-items:stretch}.today-reminders .btn{width:100%}}

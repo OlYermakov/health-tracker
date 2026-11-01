@@ -273,3 +273,76 @@ test("page declares a strict Content-Security-Policy and has no inline handlers"
     .map(item=>item.startsWith("<")?item:fs.readFileSync(item,"utf8")).join("\n");
   assert.equal(/\son[a-z]+="/.test(sources),false,"inline on* handler found");
 });
+
+test("weekly summary counts habits, workouts and wellbeing and compares weeks",async()=>{
+  const page=await env.newPage();
+  const result=await page.evaluate(()=>{
+    // Week 1: water every day, 1 workout. Week 2: water + vegetables, 2 workouts, knee pain 5.
+    state.weeks[0].days.forEach(day=>{day.water=true;});
+    state.weeks[1].days.forEach((day,index)=>{day.water=true;day.vegetables=index<4;});
+    state.weeks[1].startWeight="92";state.weeks[1].endWeight="91.4";
+    enhancements.weeks[0].dailyWellbeing[0].sleep="6";
+    enhancements.weeks[1].dailyWellbeing[0].sleep="7";enhancements.weeks[1].dailyWellbeing[1].sleep="8";
+    enhancements.weeks[1].dailyWellbeing[2].painLeft="5";
+    const record=(weekIndex,day,kind)=>({id:makeId("w"),programId:enhancements.programId,weekIndex,kind,planKey:kind==="pool"?"POOL":"A",day:String(day),completedAt:new Date().toISOString(),exercises:[]});
+    enhancements.history.push(record(0,2,"gym"),record(1,2,"gym"),record(1,5,"pool"));
+    currentWeek=2;renderAll();
+    return {summary:weeklySummary(1),focus:weeklyFocus(weeklySummary(1)),focusWeek1:weeklyFocus(weeklySummary(0)),
+      html:document.getElementById("weeklySummaryContent").textContent,title:document.getElementById("weeklySummaryTitle").textContent};
+  });
+  assert.equal(result.summary.habitPercent,Math.round(11/21*100));
+  assert.deepEqual([result.summary.workouts,result.summary.gym,result.summary.pool],[2,1,1]);
+  assert.equal(result.summary.sleepAverage,7.5);
+  assert.equal(result.summary.painMaximum,5);
+  assert.ok(Math.abs(result.summary.weightChange+0.6)<1e-9);
+  assert.match(result.focus,/коліна/,"knee pain has priority");
+  assert.match(result.focusWeek1,/Тренувань 1 з 2/);
+  assert.equal(result.title,"Підсумок тижня 2");
+  assert.match(result.html,/\+19 п\.п\. до тиж\. 1/,"habit change vs previous week");
+  assert.match(result.html,/\+1,5 год до тиж\. 1/,"sleep change vs previous week");
+  assert.match(result.html,/−0,6 кг/);
+  await page.context().close();
+});
+
+test("reminders depend on time of day, weekly workouts and backups",async()=>{
+  const page=await env.newPage();
+  const ids=await page.evaluate(()=>{
+    const monday=new Date(2026,9,5);enhancements.startDate=localISODate(monday);
+    const at=(dayOffset,hour)=>{const date=new Date(monday);date.setDate(date.getDate()+dayOffset);date.setHours(hour,0,0,0);return date;};
+    const list=now=>computeReminders(now).map(item=>item.id);
+    const out={};
+    out.mondayMorning=list(at(0,8));
+    state.weeks[0].days[0].breakfast=true;
+    out.mondayEvening=list(at(0,19));
+    out.saturdayNoWorkouts=list(at(5,10));
+    enhancements.history.push({id:"x1",programId:enhancements.programId,weekIndex:0,kind:"gym",planKey:"A",day:"1",completedAt:new Date().toISOString(),exercises:[]},
+      {id:"x2",programId:enhancements.programId,weekIndex:0,kind:"gym",planKey:"B",day:"3",completedAt:new Date().toISOString(),exercises:[]});
+    out.saturdayDone=list(at(5,10));
+    out.nextMonday=list(at(7,10));
+    enhancements.lastBackupAt=at(6,12).toISOString();
+    out.afterBackup=list(at(7,10));
+    out.beforeProgram=list(at(-3,10));
+    return out;
+  });
+  assert.deepEqual(ids.mondayMorning,["sleep"],"no data yet, so no backup reminder");
+  assert.deepEqual(ids.mondayEvening,["habits","backup"]);
+  assert.ok(ids.saturdayNoWorkouts.includes("workouts"));
+  assert.ok(!ids.saturdayDone.includes("workouts"));
+  assert.ok(ids.nextMonday.includes("summary"));
+  assert.ok(!ids.afterBackup.includes("backup"));
+  assert.deepEqual(ids.beforeProgram,[]);
+  await page.context().close();
+});
+
+test("reminder buttons on the Today screen work",async()=>{
+  const page=await env.newPage();
+  await page.evaluate(()=>{state.weeks[0].days[0].water=true;persist();});
+  await page.evaluate(()=>{const now=new Date();now.setHours(20,0,0,0);renderReminders(now);});
+  const reminders=page.locator("#todayReminders");
+  assert.equal(await reminders.isVisible(),true);
+  const [download]=await Promise.all([page.waitForEvent("download"),reminders.locator('[data-reminder="backup"] button').click()]);
+  assert.match(download.suggestedFilename(),/health-tracker-backup/);
+  await page.waitForFunction(()=>!document.querySelector('[data-reminder="backup"]'));
+  assert.deepEqual(page.errors,[]);
+  await page.context().close();
+});

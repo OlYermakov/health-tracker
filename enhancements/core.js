@@ -121,7 +121,7 @@ function updateDailyWellbeing(weekIndex,dayIndex,key,value,element=null){
   element?.classList.toggle("field-error",!valid);element?.setAttribute("aria-invalid",String(!valid));
   if(!valid){showToast(key==="sleep"?"Вкажи сон від 0 до 16 годин.":"Вкажи значення у дозволеному діапазоні.");return;}
   enhancements.weeks[weekIndex].dailyWellbeing[dayIndex][key]=value===""?"":String(value).slice(0,key==="sleep"?5:2);
-  persistEnhancements();renderWellbeing();renderSummary();
+  persistEnhancements();renderWellbeing();renderSummary();refreshInsights();
 }
 
 function weeklyWellbeingStats(weekIndex=currentWeek-1){
@@ -211,4 +211,10 @@ function renderEnhancements(){
   document.querySelectorAll("#weekSelect option").forEach((option,index)=>{option.textContent=`Тиждень ${index+1} · ${weekDates(index+1).short}`;});
   document.querySelectorAll("#weekNav .week-btn").forEach((button,index)=>{button.title=weekDates(index+1).long;button.setAttribute("aria-label",`Тиждень ${index+1}, ${weekDates(index+1).long}`);});
   renderWellbeing();renderToday();renderHistory();renderSummary();renderProgramArchive();updateChartSummaries();
+  refreshInsights();
+}
+
+function refreshInsights(){
+  if(typeof renderWeeklySummary==="function")renderWeeklySummary();
+  if(typeof renderReminders==="function")renderReminders();
 }

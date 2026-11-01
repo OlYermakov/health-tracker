@@ -14,11 +14,11 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<link rel="stylesheet" href="style.css?v=36" />
-<link rel="stylesheet" href="training.css?v=36" />
-<link rel="stylesheet" href="notes.css?v=36" />
-<link rel="stylesheet" href="enhancements.css?v=36" />
-<link rel="stylesheet" href="analytics.css?v=36" />
+<link rel="stylesheet" href="style.css?v=37" />
+<link rel="stylesheet" href="training.css?v=37" />
+<link rel="stylesheet" href="notes.css?v=37" />
+<link rel="stylesheet" href="enhancements.css?v=37" />
+<link rel="stylesheet" href="analytics.css?v=37" />
 </head>
 <body>
 <div class="shell">
@@ -55,6 +55,7 @@
           <div><div class="eyebrow">Швидкий доступ</div><h2 id="todayTitle">Сьогодні</h2></div>
           <div class="today-date" id="todayDate"></div>
         </div>
+        <div class="today-reminders" id="todayReminders" aria-live="polite" hidden></div>
         <div id="todayContent"></div>
       </section>
     </div>
@@ -77,6 +78,12 @@
       <div class="card glass"><div class="label">Стартова вага</div><div class="value" id="cardStart">—</div></div>
       <div class="card glass"><div class="label">Поточна вага</div><div class="value green" id="cardCurrent">—</div></div>
       <div class="card glass"><div class="label">Зміна ваги</div><div class="value red" id="cardDelta">—</div></div>
+    </section>
+
+    <section class="weekly-summary glass" id="weeklySummary" aria-labelledby="weeklySummaryTitle">
+      <div class="eyebrow">Огляд тижня</div>
+      <h2 id="weeklySummaryTitle">Підсумок тижня</h2>
+      <div id="weeklySummaryContent"></div>
     </section>
 
     <section class="layout">
@@ -353,17 +360,18 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="events.js?v=36"></script>
-<script src="app.js?v=36"></script>
-<script src="exercise-details.js?v=36"></script>
-<script src="enhancements/model.js?v=36"></script>
-<script src="enhancements/core.js?v=36"></script>
-<script src="enhancements/training-log.js?v=36"></script>
-<script src="enhancements/history.js?v=36"></script>
-<script src="enhancements/pool.js?v=36"></script>
-<script src="enhancements/guided-workout.js?v=36"></script>
-<script src="enhancements/archive-backup.js?v=36"></script>
-<script src="enhancements/init.js?v=36"></script>
-<script src="analytics.js?v=36"></script>
+<script src="events.js?v=37"></script>
+<script src="app.js?v=37"></script>
+<script src="exercise-details.js?v=37"></script>
+<script src="enhancements/model.js?v=37"></script>
+<script src="enhancements/core.js?v=37"></script>
+<script src="enhancements/training-log.js?v=37"></script>
+<script src="enhancements/history.js?v=37"></script>
+<script src="enhancements/pool.js?v=37"></script>
+<script src="enhancements/guided-workout.js?v=37"></script>
+<script src="enhancements/archive-backup.js?v=37"></script>
+<script src="enhancements/insights.js?v=37"></script>
+<script src="enhancements/init.js?v=37"></script>
+<script src="analytics.js?v=37"></script>
 </body>
 </html>
