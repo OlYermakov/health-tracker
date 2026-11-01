@@ -1,12 +1,12 @@
-const CACHE_NAME="health-tracker-v32";
+const VERSION="33";
+const CACHE_NAME=`health-tracker-v${VERSION}`;
 const APP_SHELL=[
-  "./","./index.html","./style.css?v=31","./training.css?v=31","./notes.css?v=31",
-  "./exercise-details.css?v=31","./enhancements.css?v=31","./analytics.css?v=32","./app.js?v=31",
-  "./exercise-details.js?v=31","./enhancements.js?v=31","./analytics.js?v=32","./health-import-worker.js?v=31","./manifest.webmanifest","./icon.svg",
-  "./assets/exercises/stationary-bike.webp","./assets/exercises/chest-press.webp","./assets/exercises/seated-row.webp",
-  "./assets/exercises/leg-curl.webp","./assets/exercises/leg-press.webp","./assets/exercises/hip-thrust.webp",
-  "./assets/exercises/pallof-press.webp","./assets/exercises/elliptical.webp","./assets/exercises/lat-pulldown.webp",
-  "./assets/exercises/shoulder-press.webp","./assets/exercises/hip-abduction.webp","./assets/exercises/face-pull.webp"
+  "./","./index.html",
+  ...["style.css","training.css","notes.css","enhancements.css","analytics.css",
+    "app.js","exercise-details.js","enhancements.js","analytics.js","health-import-worker.js"].map(file=>`./${file}?v=${VERSION}`),
+  "./manifest.webmanifest","./icon.svg",
+  ...["stationary-bike","chest-press","seated-row","leg-curl","leg-press","hip-thrust",
+    "pallof-press","elliptical","lat-pulldown","shoulder-press","hip-abduction","face-pull"].map(name=>`./assets/exercises/${name}.webp`)
 ];
 
 self.addEventListener("install",event=>{
@@ -20,12 +20,19 @@ self.addEventListener("activate",event=>{
 });
 
 self.addEventListener("fetch",event=>{
-  if(event.request.method!=="GET"||new URL(event.request.url).origin!==self.location.origin)return;
-  event.respondWith(fetch(event.request).then(response=>{
+  const request=event.request;
+  if(request.method!=="GET"||new URL(request.url).origin!==self.location.origin)return;
+  event.respondWith(fetch(request).then(response=>{
     if(response.ok){
       const copy=response.clone();
-      caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
+      event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(request,copy)));
     }
     return response;
-  }).catch(()=>caches.match(event.request).then(cached=>cached||caches.match("./index.html"))));
+  }).catch(async()=>{
+    const cached=await caches.match(request);
+    if(cached)return cached;
+    // Fall back to the app page only for page navigations, never for scripts, styles or images.
+    if(request.mode==="navigate")return (await caches.match("./index.html"))||(await caches.match("./"))||Response.error();
+    return Response.error();
+  }));
 });

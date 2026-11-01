@@ -1305,5 +1305,7 @@ historyEditDialog.addEventListener("cancel",event=>{event.preventDefault();close
 historyEditDialog.addEventListener("close",()=>document.body.classList.remove("history-edit-open"));
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
+// Ask the browser not to evict local data (Safari clears storage of rarely used sites).
+if(navigator.storage?.persist){navigator.storage.persisted?.().then(already=>already||navigator.storage.persist()).catch(()=>{});}
 
 migrateUnifiedStore();renderAll();

@@ -84,20 +84,73 @@ function readStoreValue(key){
   }catch(e){return null;}
 }
 
+// In-memory copy of the unified store: avoids re-reading and re-parsing the whole
+// JSON from localStorage on every keystroke.
+let unifiedCache=null;
+let unifiedFlushTimer=null;
+let recoveryWrittenAt=0;
+let recoveryDisabled=false;
+let storageErrorShownAt=0;
+const UNIFIED_FLUSH_DELAY=400;
+const RECOVERY_INTERVAL=60000;
+
 function readUnifiedStore(){
-  return readStoreValue(UNIFIED_KEY)||readStoreValue(RECOVERY_KEY);
+  if(!unifiedCache)unifiedCache=readStoreValue(UNIFIED_KEY)||readStoreValue(RECOVERY_KEY);
+  return unifiedCache;
+}
+
+function isQuotaError(error){
+  return error&&(error.name==="QuotaExceededError"||error.name==="NS_ERROR_DOM_QUOTA_REACHED"||error.code===22||error.code===1014);
+}
+
+function reportStorageError(){
+  const now=Date.now();
+  if(now-storageErrorShownAt<30000)return;
+  storageErrorShownAt=now;
+  const message="Не вдалося зберегти зміни: у браузері закінчилося місце. Збережи резервну копію через меню ⋯.";
+  if(typeof showToast==="function")showToast(message);else console.error(message);
+}
+
+function writeRecoveryCopy(serialized,force){
+  if(recoveryDisabled)return;
+  const now=Date.now();
+  if(!force&&now-recoveryWrittenAt<RECOVERY_INTERVAL)return;
+  try{localStorage.setItem(RECOVERY_KEY,serialized);recoveryWrittenAt=now;}catch(e){}
+}
+
+// Writes the cached store to localStorage. Returns true on success.
+function flushUnifiedStore(forceRecovery=false){
+  clearTimeout(unifiedFlushTimer);unifiedFlushTimer=null;
+  if(!unifiedCache)return true;
+  const serialized=JSON.stringify({...unifiedCache,version:UNIFIED_STORE_VERSION});
+  try{
+    localStorage.setItem(UNIFIED_KEY,serialized);
+  }catch(error){
+    if(!isQuotaError(error)){reportStorageError();return false;}
+    // The recovery copy doubles storage usage; drop it to make room for the main data.
+    recoveryDisabled=true;
+    try{localStorage.removeItem(RECOVERY_KEY);localStorage.setItem(UNIFIED_KEY,serialized);}
+    catch(e){reportStorageError();return false;}
+    return true;
+  }
+  writeRecoveryCopy(serialized,forceRecovery);
+  return true;
 }
 
 function writeUnifiedStore(value){
-  const serialized=JSON.stringify({...value,version:UNIFIED_STORE_VERSION});
-  localStorage.setItem(UNIFIED_KEY,serialized);
-  try{localStorage.setItem(RECOVERY_KEY,serialized);}catch(e){}
+  unifiedCache={...value};
+  return flushUnifiedStore(true);
 }
 
 function writeUnifiedSection(section,value){
-  const current=readUnifiedStore()||{};
-  writeUnifiedStore({...current,[section]:value});
+  unifiedCache={...(readUnifiedStore()||{}),[section]:value};
+  clearTimeout(unifiedFlushTimer);
+  unifiedFlushTimer=setTimeout(flushUnifiedStore,UNIFIED_FLUSH_DELAY);
 }
+
+function flushPendingStore(){if(unifiedFlushTimer)flushUnifiedStore(true);else if(unifiedCache)writeRecoveryCopy(JSON.stringify({...unifiedCache,version:UNIFIED_STORE_VERSION}),true);}
+window.addEventListener("pagehide",flushPendingStore);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushPendingStore();});
 
 function blankSession(planKey){
   return {day:"",done:false,completedAt:"",durationMinutes:"",exercises:WORKOUT_PLANS[planKey].exercises.map(()=>false)};
