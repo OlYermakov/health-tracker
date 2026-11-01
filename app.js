@@ -321,7 +321,7 @@ function renderRows(){
         <textarea class="day-note" rows="1" maxlength="500"
           aria-label="Нотатка: ${day.name}"
           placeholder="${escapeNote(hint)}"
-          oninput="updateDayNote(${i},this)">${escapeNote(note)}</textarea>
+          ${act("input","updateDayNote",i,"$el")}>${escapeNote(note)}</textarea>
       </td>`;
     tbody.appendChild(tr);
   });
@@ -330,7 +330,7 @@ function renderRows(){
 function checkHTML(i,key,on){
   const labels={breakfast:"білковий сніданок",vegetables:"овочі",water:"вода",activity:"активний день"};
   const action=on?"Виконано":"Не виконано";
-  return `<button class="check ${on?'on':''}" type="button" onclick="toggleCheck(${i},'${key}')" aria-pressed="${on}" aria-label="${days[i].name}: ${labels[key]}. ${action}">✓</button>`;
+  return `<button class="check ${on?'on':''}" type="button" ${act("click","toggleCheck",i,key)} aria-pressed="${on}" aria-label="${days[i].name}: ${labels[key]}. ${action}">✓</button>`;
 }
 function toggleCheck(i,key){
   const w=state.weeks[currentWeek-1];
@@ -388,7 +388,7 @@ function renderTraining(){
       <div class="exercise-number">${String(i+1).padStart(2,'0')}</div>
       <div class="exercise-main">
         <div class="exercise-overview">
-          <button class="exercise-visual" type="button" onclick="openExerciseImage('${currentPlan}',${i})" aria-label="Збільшити зображення: ${ex.name}">
+          <button class="exercise-visual" type="button" ${act("click","openExerciseImage",currentPlan,i)} aria-label="Збільшити зображення: ${ex.name}">
             <img src="assets/exercises/${ex.image}" alt="Людина виконує вправу «${ex.name}»" width="720" height="720" loading="lazy">
             <span aria-hidden="true">⌕</span>
           </button>
@@ -405,13 +405,13 @@ function renderTraining(){
     <aside class="pool-alternative">
       <div class="pool-alternative-icon" aria-hidden="true">🏊</div>
       <div><strong>Замість залу — басейн</strong><span>Одне відвідування басейну зараховується як одне з двох тренувань тижня.</span></div>
-      <button type="button" onclick="openPoolSession()">Записати басейн</button>
+      <button type="button" ${act("click","openPoolSession")}>Записати басейн</button>
     </aside>
     <div class="plan-toolbar">
       <div>
         <div class="plan-kicker">${plan.title} · ${plan.subtitle}</div>
         <h3>${plan.goal}</h3>
-        <button class="start-workout" type="button" onclick="startGuidedWorkout('${currentPlan}')">${guidedAction}</button>
+        <button class="start-workout" type="button" ${act("click","startGuidedWorkout",currentPlan)}>${guidedAction}</button>
       </div>
       <div class="plan-progress" aria-label="Прогрес вправ">
         <div><span>${doneExercises} / ${plan.exercises.length} вправ</span><b>${pct}%</b></div>
@@ -422,7 +422,7 @@ function renderTraining(){
     <div class="session-footer">
       <div class="session-field">
         <label for="sessionDay">Коли тренуєшся?</label>
-        <select id="sessionDay" onchange="setSessionDay('${currentPlan}',this.value)">
+        <select id="sessionDay" ${act("change","setSessionDay",currentPlan,"$value")}>
           <option value="">Обери день</option>${dayOptions}
         </select>
       </div>
@@ -444,6 +444,8 @@ function openExerciseImage(planKey,index){
   else dialog.setAttribute("open","");
 }
 function closeExerciseImage(){document.getElementById("exerciseImageDialog")?.close();}
+// Clicking the dimmed area around the image (the dialog element itself) closes it.
+function closeExerciseImageOnBackdrop(event){if(event.target.id==="exerciseImageDialog")closeExerciseImage();}
 function setSessionDay(planKey,value){
   const w=state.weeks[currentWeek-1];
   const session=w.training[planKey];

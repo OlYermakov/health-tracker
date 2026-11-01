@@ -107,10 +107,10 @@ function dailyMetricOptions(value,min,max){
 function dailyWellbeingHTML(weekIndex,dayIndex){
   const daily=enhancements.weeks?.[weekIndex]?.dailyWellbeing?.[dayIndex]||blankDailyWellbeing();
   return `<div class="daily-wellbeing-grid">
-    <label><span>Сон, год</span><input type="number" inputmode="decimal" min="0" max="16" step="0.25" value="${escapeNote(daily.sleep)}" placeholder="7.5" aria-label="${days[dayIndex].name}: сон у годинах" oninput="updateDailyWellbeing(${weekIndex},${dayIndex},'sleep',this.value,this)"></label>
-    <label><span>Енергія</span><select aria-label="${days[dayIndex].name}: енергія від 1 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'energy',this.value)">${dailyMetricOptions(daily.energy,1,10)}</select></label>
-    <label><span>Ліве коліно</span><select aria-label="${days[dayIndex].name}: біль у лівому коліні від 0 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'painLeft',this.value)">${dailyMetricOptions(daily.painLeft,0,10)}</select></label>
-    <label><span>Праве коліно</span><select aria-label="${days[dayIndex].name}: біль у правому коліні від 0 до 10" onchange="updateDailyWellbeing(${weekIndex},${dayIndex},'painRight',this.value)">${dailyMetricOptions(daily.painRight,0,10)}</select></label>
+    <label><span>Сон, год</span><input type="number" inputmode="decimal" min="0" max="16" step="0.25" value="${escapeNote(daily.sleep)}" placeholder="7.5" aria-label="${days[dayIndex].name}: сон у годинах" ${act("input","updateDailyWellbeing",weekIndex,dayIndex,"sleep","$value","$el")}></label>
+    <label><span>Енергія</span><select aria-label="${days[dayIndex].name}: енергія від 1 до 10" ${act("change","updateDailyWellbeing",weekIndex,dayIndex,"energy","$value")}>${dailyMetricOptions(daily.energy,1,10)}</select></label>
+    <label><span>Ліве коліно</span><select aria-label="${days[dayIndex].name}: біль у лівому коліні від 0 до 10" ${act("change","updateDailyWellbeing",weekIndex,dayIndex,"painLeft","$value")}>${dailyMetricOptions(daily.painLeft,0,10)}</select></label>
+    <label><span>Праве коліно</span><select aria-label="${days[dayIndex].name}: біль у правому коліні від 0 до 10" ${act("change","updateDailyWellbeing",weekIndex,dayIndex,"painRight","$value")}>${dailyMetricOptions(daily.painRight,0,10)}</select></label>
   </div>`;
 }
 

@@ -14,7 +14,7 @@ function recentHistoryUndoAvailable(){
 
 function historyActionsHTML(record){
   const id=encodeURIComponent(record.id);
-  return `<div class="history-actions"><button type="button" onclick="openHistoryEditor('${id}')">Виправити</button><button class="history-cancel" type="button" onclick="cancelHistoryRecord('${id}')">Скасувати запис</button></div>`;
+  return `<div class="history-actions"><button type="button" ${act("click","openHistoryEditor",id)}>Виправити</button><button class="history-cancel" type="button" ${act("click","cancelHistoryRecord",id)}>Скасувати запис</button></div>`;
 }
 
 function captureHistorySnapshot(record,index,weekIndexes,type){
@@ -68,7 +68,7 @@ function openHistoryEditor(encodedId){
       <label><span>Ліве коліно · після</span><select name="painAfterLeft">${painOptions(record.painAfterLeft)}</select></label>
       <label><span>Праве коліно · після</span><select name="painAfterRight">${painOptions(record.painAfterRight)}</select></label>
     </div>${poolFields}${historyEditSetRows(record)}
-    <footer class="history-edit-actions"><button type="button" onclick="closeHistoryEditor()">Закрити</button><button class="history-edit-save" type="submit">Зберегти виправлення</button></footer>`;
+    <footer class="history-edit-actions"><button type="button" ${act("click","closeHistoryEditor")}>Закрити</button><button class="history-edit-save" type="submit">Зберегти виправлення</button></footer>`;
   document.body.classList.add("history-edit-open");
   if(!dialog.open){if(typeof dialog.showModal==="function")dialog.showModal();else dialog.setAttribute("open","");}
 }
@@ -162,7 +162,7 @@ function renderHistory(){
         record.replacesPlan?`Замість тренування ${record.replacesPlan}`:""
       ].filter(Boolean).map(text=>`<li><span>${text}</span></li>`).join("");
       const notes=record.notes?`<p class="history-pool-note">${escapeNote(record.notes)}</p>`:"";
-      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'POOL')">Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
+      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" ${act("click","openHistorySession",record.weekIndex,"POOL")}>Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
     }
     const plan=WORKOUT_PLANS[record.planKey];
     const completed=record.exercises.filter(exercise=>exercise.sets.length&&exercise.sets.every(set=>set.done)).length;
@@ -172,7 +172,7 @@ function renderHistory(){
       if(!snapshot?.sets?.some(set=>set.weight||set.reps||set.done))return "";
       return `<li><span>${escapeNote(exercise.name)}</span><strong>${escapeNote(snapshot.sets.map(set=>formatSet(set,record.planKey,index)).join(" · ")||"Виконано")}</strong></li>`;
     }).join("");
-    return `<article class="history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>Тренування ${record.planKey}</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span><span>${completed} / ${plan.exercises.length} вправ</span>${pain}</div></div><details><summary>Показати результати</summary><ul>${rows||"<li><span>Результати підходів не записані</span></li>"}</ul></details><button class="history-open" type="button" onclick="openHistorySession(${record.weekIndex},'${record.planKey}')">Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
+    return `<article class="history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>Тренування ${record.planKey}</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span><span>${completed} / ${plan.exercises.length} вправ</span>${pain}</div></div><details><summary>Показати результати</summary><ul>${rows||"<li><span>Результати підходів не записані</span></li>"}</ul></details><button class="history-open" type="button" ${act("click","openHistorySession",record.weekIndex,record.planKey)}>Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
   }).join("");
 }
 

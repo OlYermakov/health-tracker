@@ -208,3 +208,68 @@ test("share button is hidden where file sharing is unsupported",async()=>{
   assert.equal(await page.locator("#more .mobile-data-actions .btn").first().isVisible(),true);
   await page.context().close();
 });
+
+test("real taps on buttons and fields work through event delegation without CSP errors",async()=>{
+  const page=await env.newPage();
+  page.on("dialog",dialog=>dialog.accept());
+  // Today: habit button and sleep field.
+  await page.locator(".today-habit").first().click();
+  assert.equal(await page.evaluate(()=>{const p=programPosition();return state.weeks[p.weekIndex].days[p.dayIndex].breakfast;}),true);
+  await page.locator('#todayContent [data-input="updateDailyWellbeing"]').fill("7.5");
+  assert.equal(await page.evaluate(()=>{const p=programPosition();return enhancements.weeks[p.weekIndex].dailyWellbeing[p.dayIndex].sleep;}),"7.5");
+
+  // Training: switch plan, log a set, open and close the exercise photo.
+  await page.click("[data-app-screen=training]");
+  await page.click("#tabB");
+  assert.equal(await page.evaluate(()=>currentPlan),"B");
+  await page.click("#tabA");
+  const card=page.locator("#workoutPlan .exercise-card").nth(1);
+  await card.locator('[data-input="updateExerciseSetValue"]').first().fill("40");
+  await card.locator(".set-done").first().click();
+  assert.deepEqual(await page.evaluate(()=>{const s=exerciseLog(currentWeek-1,"A",1).sets[0];return [s.weight,s.done];}),["40",true]);
+  await card.locator(".exercise-visual").click();
+  assert.equal(await page.locator("#exerciseImageDialog").evaluate(d=>d.open),true);
+  await page.mouse.click(5,5); // backdrop
+  assert.equal(await page.locator("#exerciseImageDialog").evaluate(d=>d.open),false);
+
+  // Pool session through the form.
+  await page.click('[data-click="openPoolSession"]');
+  await page.selectOption("#poolDay",{index:1});
+  await page.locator('[data-input="updatePoolDraft"][data-input-args*="durationMinutes"]').fill("35");
+  await page.selectOption('[data-change="updatePoolDraft"][data-change-args*="swimStyle"]',"crawl");
+  await page.selectOption('[data-change="updatePoolDraft"][data-change-args*="intensity"]',"easy");
+  await page.click(".pool-save");
+  assert.equal(await page.evaluate(()=>enhancements.history.filter(r=>r.kind==="pool").length),1);
+
+  // Guided workout through its buttons.
+  await page.click(".start-workout");
+  await page.selectOption("#guidedSessionDay",{index:3});
+  for(let step=0;step<5;step++){
+    for(const button of await page.locator("#guidedWorkoutDialog .set-done").all())await button.click();
+    if(step<4)await page.click(".guided-next");
+  }
+  await page.click('[data-click="startRestTimer"]>>nth=0');
+  assert.ok(await page.evaluate(()=>enhancements.activeWorkout.restUntil));
+  await page.click('[data-click="skipRestTimer"]');
+  while(await page.locator(".guided-next").count())await page.click(".guided-next");
+  await page.click('[data-click="finishGuidedWorkout"]');
+  assert.equal(await page.evaluate(()=>enhancements.history.filter(r=>r.kind==="gym").length),1);
+
+  // History: open the editor, submit the form, close it.
+  await page.locator('[data-click="openHistoryEditor"]').first().click();
+  assert.equal(await page.locator("#historyEditDialog").evaluate(d=>d.open),true);
+  await page.locator('#historyEditDialog [data-click="closeHistoryEditor"]').first().click();
+  assert.equal(await page.locator("#historyEditDialog").evaluate(d=>d.open),false);
+
+  assert.deepEqual(page.errors,[]);
+  await page.context().close();
+});
+
+test("page declares a strict Content-Security-Policy and has no inline handlers",async()=>{
+  const fs=require("fs"),path=require("path"),root=path.resolve(__dirname,"..");
+  const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
+  assert.match(html,/http-equiv="Content-Security-Policy"[^>]*script-src 'self'/);
+  const sources=[html,...["app.js","analytics.js","exercise-details.js"].map(f=>path.join(root,f)),...fs.readdirSync(path.join(root,"enhancements")).map(f=>path.join(root,"enhancements",f))]
+    .map(item=>item.startsWith("<")?item:fs.readFileSync(item,"utf8")).join("\n");
+  assert.equal(/\son[a-z]+="/.test(sources),false,"inline on* handler found");
+});

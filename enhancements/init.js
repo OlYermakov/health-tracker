@@ -46,7 +46,7 @@ document.getElementById("waistCircumference").addEventListener("blur",event=>{
 
 document.getElementById("exportBackup").addEventListener("click",exportBackup);
 if(canShareBackupFiles())document.querySelectorAll("[data-share-backup]").forEach(button=>{button.hidden=false;button.addEventListener("click",shareBackup);});
-document.getElementById("importBackup").addEventListener("click",()=>document.getElementById("backupFile").click());
+document.getElementById("importBackup").addEventListener("click",openBackupPicker);
 document.getElementById("backupFile").addEventListener("change",event=>{const [file]=event.target.files;if(file)importBackup(file);event.target.value="";});
 const guidedDialog=document.getElementById("guidedWorkoutDialog");
 guidedDialog.addEventListener("cancel",event=>{event.preventDefault();closeGuidedWorkout();});

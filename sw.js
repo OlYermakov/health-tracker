@@ -1,9 +1,9 @@
-const VERSION="35";
+const VERSION="36";
 const CACHE_NAME=`health-tracker-v${VERSION}`;
 const APP_SHELL=[
   "./","./index.html",
   ...["style.css","training.css","notes.css","enhancements.css","analytics.css",
-    "app.js","exercise-details.js",
+    "events.js","app.js","exercise-details.js",
     ...["model","core","training-log","history","pool","guided-workout","archive-backup","init"].map(name=>`enhancements/${name}.js`),
     "analytics.js","health-import-worker.js"].map(file=>`./${file}?v=${VERSION}`),
   "./manifest.webmanifest","./icon.svg",

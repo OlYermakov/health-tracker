@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#071018" />
 <meta name="color-scheme" content="dark" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="description" content="Особистий 12-тижневий трекер звичок, ваги, тренувань і самопочуття." />
@@ -13,11 +14,11 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<link rel="stylesheet" href="style.css?v=35" />
-<link rel="stylesheet" href="training.css?v=35" />
-<link rel="stylesheet" href="notes.css?v=35" />
-<link rel="stylesheet" href="enhancements.css?v=35" />
-<link rel="stylesheet" href="analytics.css?v=35" />
+<link rel="stylesheet" href="style.css?v=36" />
+<link rel="stylesheet" href="training.css?v=36" />
+<link rel="stylesheet" href="notes.css?v=36" />
+<link rel="stylesheet" href="enhancements.css?v=36" />
+<link rel="stylesheet" href="analytics.css?v=36" />
 </head>
 <body>
 <div class="shell">
@@ -182,8 +183,8 @@
     </div>
 
     <div class="training-tabs" role="tablist" aria-label="Вибір тренування">
-      <button id="tabA" class="training-tab active" type="button" role="tab" onclick="selectPlan('A')">A <span>база + корпус</span></button>
-      <button id="tabB" class="training-tab" type="button" role="tab" onclick="selectPlan('B')">B <span>спина + плечі</span></button>
+      <button id="tabA" class="training-tab active" type="button" role="tab" data-click="selectPlan" data-click-args='["A"]'>A <span>база + корпус</span></button>
+      <button id="tabB" class="training-tab" type="button" role="tab" data-click="selectPlan" data-click-args='["B"]'>B <span>спина + плечі</span></button>
     </div>
 
     <div id="workoutPlan" role="tabpanel"></div>
@@ -192,7 +193,7 @@
       <section class="history-section glass" id="trainingHistory" aria-labelledby="historyTitle">
     <div class="history-heading">
       <div><div class="eyebrow">Журнал</div><h2 id="historyTitle">Історія тренувань</h2></div>
-      <div class="history-heading-meta"><button id="undoHistoryChange" type="button" onclick="undoHistoryChange()" hidden>↶ Скасувати зміну</button><span id="historyCount">0 записів</span></div>
+      <div class="history-heading-meta"><button id="undoHistoryChange" type="button" data-click="undoHistoryChange" hidden>↶ Скасувати зміну</button><span id="historyCount">0 записів</span></div>
     </div>
     <div class="history-list" id="historyList"></div>
       </section>
@@ -278,10 +279,10 @@
       <div class="summary-card"><span>Зміна талії</span><strong id="summaryWaist">—</strong></div>
       <div class="summary-card"><span>Остання копія</span><strong id="summaryBackup">Немає</strong></div>
     </div>
-    <div class="backup-reminder" id="backupReminder" hidden><div><strong>Захисти прогрес</strong><span>Остання файлова копія відсутня або старша за 7 днів. Автовідновлення у браузері вже працює, але файл потрібен на випадок очищення Safari чи зміни телефона.</span></div><button type="button" onclick="exportBackup()">Зберегти копію</button></div>
+    <div class="backup-reminder" id="backupReminder" hidden><div><strong>Захисти прогрес</strong><span>Остання файлова копія відсутня або старша за 7 днів. Автовідновлення у браузері вже працює, але файл потрібен на випадок очищення Safari чи зміни телефона.</span></div><button type="button" data-click="exportBackup">Зберегти копію</button></div>
     <div class="program-lifecycle">
       <div><strong>Керування програмою</strong><span id="programArchiveStatus">Поточна програма активна.</span></div>
-      <button type="button" onclick="archiveCurrentProgram()">Архівувати й почати нову</button>
+      <button type="button" data-click="archiveCurrentProgram">Архівувати й почати нову</button>
     </div>
     <div id="programArchiveList"></div>
       </section>
@@ -306,8 +307,8 @@
       <section class="mobile-more-card glass" aria-labelledby="mobileDataTitle">
         <div><div class="eyebrow">Захист прогресу</div><h2 id="mobileDataTitle">Дані застосунку</h2></div>
         <div class="mobile-data-actions">
-          <button class="btn" type="button" onclick="exportBackup()">Зберегти копію</button>
-          <button class="btn" type="button" onclick="document.getElementById('backupFile').click()">Відновити з файла</button>
+          <button class="btn" type="button" data-click="exportBackup">Зберегти копію</button>
+          <button class="btn" type="button" data-click="openBackupPicker">Відновити з файла</button>
           <button class="btn share-backup" type="button" data-share-backup hidden>Поділитися копією (Файли, iCloud, пошта)</button>
         </div>
       </section>
@@ -327,41 +328,42 @@
   </main>
 </div>
 <div class="toast" id="appToast" role="status" aria-live="polite"></div>
-<dialog class="exercise-image-dialog" id="exerciseImageDialog" onclick="if(event.target===this)closeExerciseImage()">
-  <button class="exercise-image-close" type="button" onclick="closeExerciseImage()" aria-label="Закрити">×</button>
+<dialog class="exercise-image-dialog" id="exerciseImageDialog" data-click="closeExerciseImageOnBackdrop" data-click-args='["$event"]'>
+  <button class="exercise-image-close" type="button" data-click="closeExerciseImage" aria-label="Закрити">×</button>
   <figure><img src="" alt=""><figcaption></figcaption></figure>
 </dialog>
 <dialog class="guided-workout-dialog" id="guidedWorkoutDialog">
   <div class="guided-shell">
     <header class="guided-header">
       <div><span id="guidedPlanLabel">Тренування A</span><strong id="guidedProgress">1 / 7</strong></div>
-      <div class="guided-header-actions"><button class="guided-pause-button" id="guidedPauseButton" type="button" onclick="toggleGuidedPause()" aria-pressed="false">Ⅱ Пауза</button><button type="button" onclick="closeGuidedWorkout()" aria-label="Закрити тренування">×</button></div>
+      <div class="guided-header-actions"><button class="guided-pause-button" id="guidedPauseButton" type="button" data-click="toggleGuidedPause" aria-pressed="false">Ⅱ Пауза</button><button type="button" data-click="closeGuidedWorkout" aria-label="Закрити тренування">×</button></div>
     </header>
     <div id="guidedWorkoutContent"></div>
   </div>
 </dialog>
 <dialog class="pool-session-dialog" id="poolSessionDialog">
   <div class="pool-session-shell">
-    <header class="pool-session-header"><span id="poolWeekLabel">Басейн · тиждень 1</span><button type="button" onclick="closePoolSession()" aria-label="Закрити запис басейну">×</button></header>
+    <header class="pool-session-header"><span id="poolWeekLabel">Басейн · тиждень 1</span><button type="button" data-click="closePoolSession" aria-label="Закрити запис басейну">×</button></header>
     <div id="poolSessionContent"></div>
   </div>
 </dialog>
 <dialog class="history-edit-dialog" id="historyEditDialog">
-  <form class="history-edit-shell" id="historyEditForm" onsubmit="saveHistoryCorrection(event)">
-    <header class="history-edit-header"><span>Виправлення запису</span><button type="button" onclick="closeHistoryEditor()" aria-label="Закрити виправлення запису">×</button></header>
+  <form class="history-edit-shell" id="historyEditForm" data-submit="saveHistoryCorrection" data-submit-args='["$event"]'>
+    <header class="history-edit-header"><span>Виправлення запису</span><button type="button" data-click="closeHistoryEditor" aria-label="Закрити виправлення запису">×</button></header>
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="app.js?v=35"></script>
-<script src="exercise-details.js?v=35"></script>
-<script src="enhancements/model.js?v=35"></script>
-<script src="enhancements/core.js?v=35"></script>
-<script src="enhancements/training-log.js?v=35"></script>
-<script src="enhancements/history.js?v=35"></script>
-<script src="enhancements/pool.js?v=35"></script>
-<script src="enhancements/guided-workout.js?v=35"></script>
-<script src="enhancements/archive-backup.js?v=35"></script>
-<script src="enhancements/init.js?v=35"></script>
-<script src="analytics.js?v=35"></script>
+<script src="events.js?v=36"></script>
+<script src="app.js?v=36"></script>
+<script src="exercise-details.js?v=36"></script>
+<script src="enhancements/model.js?v=36"></script>
+<script src="enhancements/core.js?v=36"></script>
+<script src="enhancements/training-log.js?v=36"></script>
+<script src="enhancements/history.js?v=36"></script>
+<script src="enhancements/pool.js?v=36"></script>
+<script src="enhancements/guided-workout.js?v=36"></script>
+<script src="enhancements/archive-backup.js?v=36"></script>
+<script src="enhancements/init.js?v=36"></script>
+<script src="analytics.js?v=36"></script>
 </body>
 </html>

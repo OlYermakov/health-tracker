@@ -100,3 +100,5 @@ function updateProgramStartDate(event){
   enhancements.startDate=normalized;recalculateCurrentPerformedDates();persistEnhancements();renderAll();
   if(normalized!==original)showToast("Початок тижня автоматично перенесено на понеділок.");
 }
+
+function openBackupPicker(){document.getElementById("backupFile").click();}
