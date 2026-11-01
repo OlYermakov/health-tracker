@@ -1,0 +1,14 @@
+{
+  "name": "health-tracker",
+  "private": true,
+  "description": "Особистий 12-тижневий health tracker (статичний PWA без збірки).",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "version:bump": "node scripts/version.js",
+    "version:check": "node scripts/version.js --check",
+    "icons": "node scripts/generate-icons.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
