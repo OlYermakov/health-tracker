@@ -67,10 +67,6 @@ function navigateToAppScreen(screen,{updateHistory=false,scroll=true}={}){
     if(link.dataset.appScreen===selected)link.setAttribute("aria-current","page");
     else link.removeAttribute("aria-current");
   });
-  if(!mobileAppEnabled()){
-    if(scroll)document.querySelector(APP_SCREEN_HASHES[selected])?.scrollIntoView({behavior:"smooth",block:"start"});
-    return;
-  }
   if(updateHistory&&location.hash!==APP_SCREEN_HASHES[selected])history.pushState({screen:selected},"",APP_SCREEN_HASHES[selected]);
   if(scroll)window.scrollTo({top:0,behavior:"auto"});
   if(selected==="progress")requestAnimationFrame(()=>{drawCharts();if(typeof renderHealthAnalytics==="function")renderHealthAnalytics();});
@@ -252,6 +248,10 @@ function completionOf(w){
   done+=Math.min(activityCount(w),WEEKLY_ACTIVITY_TARGET);
   return done/(21+WEEKLY_ACTIVITY_TARGET);
 }
+// Swimming icon in the same line style as the navigation icons (replaces the 🏊 emoji).
+function poolIconSVG(className="icon-pool"){
+  return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="16.5" cy="6" r="2"/><path d="M4.5 12.5 9.5 9.5l3 2.5 3-1.5"/><path d="M2 16.5c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"/><path d="M2 20c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"/></svg>`;
+}
 // Ukrainian number formatting: decimal comma and a real minus sign ("−1,4").
 function formatNumberUk(value,digits=1){
   const rounded=Number(Number(value).toFixed(digits));
@@ -310,6 +310,31 @@ function renderWeekSelect(){
     const o=document.createElement("option");o.value=i;o.textContent=`Тиждень ${i}`;o.selected=i===currentWeek;s.appendChild(o);
   }
 }
+// Phones: only the expanded days of the week show their full card; others are one compact line.
+// Today is expanded by default when the current program week is shown.
+const expandedWeekDays=new Map();
+function weekDayExpanded(dayIndex){
+  const key=currentWeek-1;
+  if(!expandedWeekDays.has(key)){
+    const position=typeof programPosition==="function"?programPosition():null;
+    expandedWeekDays.set(key,new Set(position?.status==="active"&&position.weekIndex===key?[position.dayIndex]:[]));
+  }
+  return expandedWeekDays.get(key).has(dayIndex);
+}
+function toggleDayRow(dayIndex){
+  weekDayExpanded(dayIndex);
+  const set=expandedWeekDays.get(currentWeek-1);
+  if(set.has(dayIndex))set.delete(dayIndex);else set.add(dayIndex);
+  renderRows();
+}
+function dayCompactSummary(week,dayIndex){
+  const day=week.days[dayIndex],habits=["breakfast","vegetables","water"].filter(key=>day[key]).length;
+  const parts=[`звички ${habits}/3`];
+  if(dayIsActive(week,dayIndex))parts.push("активний");
+  const sleep=typeof enhancements==="object"?weightNumber(enhancements.weeks[currentWeek-1]?.dailyWellbeing?.[dayIndex]?.sleep):null;
+  if(sleep!==null)parts.push(`сон ${formatNumberUk(sleep,sleep%1?1:0)} год`);
+  return parts.join(" · ");
+}
 function renderRows(){
   const tbody=document.getElementById("weekRows");
   tbody.innerHTML="";
@@ -317,10 +342,12 @@ function renderRows(){
   days.forEach((day,i)=>{
     const tr=document.createElement("tr");
     if(day.recommended)tr.classList.add("workout");
+    const expanded=weekDayExpanded(i);
+    tr.classList.toggle("collapsed",!expanded);
     const hint=day.note||"Додати нотатку…";
     const note=dayNotes[currentWeek-1][i]||"";
     tr.innerHTML=`
-      <td>${day.name}</td>
+      <td class="day-cell"><button type="button" class="day-toggle" ${act("click","toggleDayRow",i)} aria-expanded="${expanded}"><span class="day-name">${day.name}</span><span class="day-compact">${dayCompactSummary(w,i)}</span><span class="day-chevron" aria-hidden="true">›</span></button></td>
       <td>${checkHTML(i,"breakfast",w.days[i].breakfast)}</td>
       <td>${checkHTML(i,"vegetables",w.days[i].vegetables)}</td>
       <td>${checkHTML(i,"water",w.days[i].water)}</td>
@@ -412,7 +439,7 @@ function renderTraining(){
   const guidedAction=typeof guidedWorkoutButtonLabel==="function"?guidedWorkoutButtonLabel(currentPlan):"▶ Почати тренування";
   document.getElementById("workoutPlan").innerHTML=`
     <aside class="pool-alternative">
-      <div class="pool-alternative-icon" aria-hidden="true">🏊</div>
+      <div class="pool-alternative-icon" aria-hidden="true">${poolIconSVG()}</div>
       <div><strong>Замість залу — басейн</strong><span>Одне відвідування басейну зараховується як одне з двох тренувань тижня.</span></div>
       <button type="button" ${act("click","openPoolSession")}>Записати басейн</button>
     </aside>
@@ -534,7 +561,7 @@ document.getElementById("programProgressDetails")?.addEventListener("toggle",eve
 
 document.querySelector(".section-nav")?.addEventListener("click",event=>{
   const link=event.target.closest("[data-app-screen]");
-  if(!link||!mobileAppEnabled())return;
+  if(!link)return;
   event.preventDefault();
   navigateToAppScreen(link.dataset.appScreen,{updateHistory:true});
 });

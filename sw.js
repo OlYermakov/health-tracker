@@ -1,4 +1,4 @@
-const VERSION="38";
+const VERSION="39";
 const CACHE_NAME=`health-tracker-v${VERSION}`;
 const APP_SHELL=[
   "./","./index.html",

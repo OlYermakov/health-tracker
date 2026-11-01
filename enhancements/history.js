@@ -14,7 +14,8 @@ function recentHistoryUndoAvailable(){
 
 function historyActionsHTML(record){
   const id=encodeURIComponent(record.id);
-  return `<div class="history-actions"><button type="button" ${act("click","openHistoryEditor",id)}>Виправити</button><button class="history-cancel" type="button" ${act("click","cancelHistoryRecord",id)}>Скасувати запис</button></div>`;
+  // The destructive action sits in a small menu, so it is not repeated as a red button on every card.
+  return `<div class="history-actions"><button type="button" ${act("click","openHistoryEditor",id)}>Виправити</button><details class="history-more"><summary aria-label="Інші дії із записом">⋯</summary><div class="history-more-popover"><button class="history-cancel" type="button" ${act("click","cancelHistoryRecord",id)}>Скасувати запис</button></div></details></div>`;
 }
 
 function captureHistorySnapshot(record,index,weekIndexes,type){
@@ -59,7 +60,7 @@ function openHistoryEditor(encodedId){
     <label><span>Інтенсивність</span><select name="intensity">${Object.entries(INTENSITY_LABELS).map(([value,label])=>`<option value="${value}" ${record.intensity===value?"selected":""}>${label}</option>`).join("")}</select></label>
     <label><span>Що замінює?</span><select name="replacesPlan"><option value="">Окреме тренування</option><option value="A" ${record.replacesPlan==="A"?"selected":""}>Тренування A</option><option value="B" ${record.replacesPlan==="B"?"selected":""}>Тренування B</option></select></label>
   </div><label class="history-edit-notes"><span>Нотатка</span><textarea name="notes" maxlength="500" rows="3">${escapeNote(record.notes)}</textarea></label>`:"";
-  content.innerHTML=`<div class="history-edit-title"><span>${isPoolRecord(record)?"🏊 Басейн":`Тренування ${record.planKey}`}</span><strong>Зміни одразу оновлять календар, прогрес та історію.</strong></div>
+  content.innerHTML=`<div class="history-edit-title"><span>${isPoolRecord(record)?`${poolIconSVG("icon-pool inline")}Басейн`:`Тренування ${record.planKey}`}</span><strong>Зміни одразу оновлять календар, прогрес та історію.</strong></div>
     <div class="history-edit-grid">
       <label><span>Дата тренування</span><input name="performedDate" type="date" required min="${start?localISODate(start):""}" max="${end?localISODate(end):""}" value="${performedDate}"></label>
       <label><span>Тривалість, хв</span><input name="durationMinutes" type="number" min="1" max="600" value="${escapeNote(record.durationMinutes)}"></label>
@@ -162,7 +163,7 @@ function renderHistory(){
         record.replacesPlan?`Замість тренування ${record.replacesPlan}`:""
       ].filter(Boolean).map(text=>`<li><span>${text}</span></li>`).join("");
       const notes=record.notes?`<p class="history-pool-note">${escapeNote(record.notes)}</p>`:"";
-      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>🏊 Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" ${act("click","openHistorySession",record.weekIndex,"POOL")}>Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
+      return `<article class="history-card pool-history-card"><div class="history-card-top"><div><span>${record.date?dateFormat.format(record.date):`Тиждень ${record.weekIndex+1}`}</span><h3>${poolIconSVG("icon-pool inline")}Басейн</h3></div><div class="history-metrics"><span>${record.durationMinutes?`${escapeNote(record.durationMinutes)} хв`:"час не записано"}</span>${record.distanceMeters?`<span>${escapeNote(record.distanceMeters)} м</span>`:""}${pain}</div></div><details><summary>Показати результати</summary><ul>${poolDetails||"<li><span>Додаткові показники не записані</span></li>"}</ul>${notes}</details><button class="history-open" type="button" ${act("click","openHistorySession",record.weekIndex,"POOL")}>Відкрити тиждень ${record.weekIndex+1}</button>${historyActionsHTML(record)}</article>`;
     }
     const plan=WORKOUT_PLANS[record.planKey];
     const completed=record.exercises.filter(exercise=>exercise.sets.length&&exercise.sets.every(set=>set.done)).length;

@@ -1,6 +1,9 @@
 .hero-tools{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
 .shell{position:relative}
-.app-screens{display:block}.mobile-screen{display:contents}.mobile-screen-heading,.mobile-more-card{display:none}
+/* One screen at a time on every device; the navigation switches screens. */
+.app-screens{display:block}.mobile-screen{display:none;min-width:0}.mobile-screen.is-active{display:block;animation:screen-in .18s ease-out}
+.mobile-screen-heading{display:block;padding:20px 3px 2px}.mobile-screen-heading h2{margin:5px 0 0;font-size:28px}
+.mobile-more-card{display:none}
 .section-nav-icon{display:none}
 .data-menu{position:absolute;z-index:60;top:26px;right:28px;margin:0}
 .data-menu>summary{list-style:none;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:var(--text);font-size:25px;font-weight:900;line-height:1;cursor:pointer}
@@ -270,3 +273,45 @@
 .weekly-metric.danger strong{color:#ff9aa9}
 .weekly-focus.warn{border:1px solid rgba(255,170,110,.32);background:rgba(255,170,110,.08)}
 .weekly-focus.danger{border:1px solid rgba(255,107,129,.4);background:rgba(255,107,129,.08)}
+.today-no-workout strong{color:var(--text)}
+.today-no-workout>span{line-height:1.45}
+.today-no-workout-actions{display:flex;gap:8px;flex:0 0 auto}
+.today-no-workout button{min-height:44px}
+.today-no-workout button.secondary{background:rgba(255,255,255,.05);border-color:var(--line)}
+.today-no-workout.urgent{border-color:rgba(121,231,255,.3);background:rgba(121,231,255,.06)}
+.today-no-workout.done{border-color:rgba(66,230,164,.28);background:rgba(66,230,164,.06)}
+@media(max-width:620px){.today-no-workout{flex-direction:column;align-items:stretch}.today-no-workout-actions>button{flex:1}}
+.history-actions{align-items:center}
+.history-actions button{min-height:44px}
+.history-more{position:relative;margin-left:auto}
+.history-more>summary{list-style:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);color:var(--muted);font-size:20px;font-weight:900;cursor:pointer}
+.history-more>summary::-webkit-details-marker{display:none}
+.history-more[open]>summary{color:var(--text);border-color:rgba(121,231,255,.3)}
+.history-more-popover{position:absolute;right:0;bottom:calc(100% + 6px);z-index:5;padding:6px;border:1px solid var(--line);border-radius:12px;background:rgba(10,20,32,.98);box-shadow:var(--shadow)}
+.history-more-popover button{white-space:nowrap}
+.icon-pool{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--cyan)}
+.icon-pool.inline{width:1.05em;height:1.05em;margin-right:.35em;vertical-align:-.12em}
+.pool-alternative-icon,.pool-intro>div:first-child{display:grid;place-items:center}
+/* Day toggle: plain day name on desktop, a collapsible header on phones. */
+.day-toggle{all:unset;display:block;font:inherit;color:inherit;pointer-events:none}
+.day-compact,.day-chevron{display:none}
+@media(max-width:720px){
+  .table-wrap td.day-cell{padding:0}
+  .day-toggle{pointer-events:auto;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:2px;width:100%;min-height:44px;box-sizing:border-box}
+  .day-toggle:focus-visible{outline:2px solid rgba(121,231,255,.6);outline-offset:3px;border-radius:8px}
+  .day-name{grid-column:1}
+  .day-chevron{display:block;grid-column:2;grid-row:1/span 2;color:var(--muted);font-size:22px;transform:rotate(90deg);transition:transform .15s}
+  .table-wrap tr.collapsed .day-chevron{transform:none}
+  .table-wrap tr.collapsed .day-compact{display:block;grid-column:1;color:var(--muted);font-size:13px;font-weight:700}
+  .table-wrap tr.collapsed{padding:10px 13px}
+  .table-wrap tr.collapsed>td:not(.day-cell){display:none}
+}
+@media(min-width:721px){
+  .section-nav a[aria-current="page"]{color:var(--text);background:linear-gradient(135deg,rgba(121,231,255,.18),rgba(183,156,255,.13))}
+}
+/* Calmer hierarchy: only top-level panels are framed glass; tiles inside them use a soft fill without a border.
+   Tinted borders (warnings, done, urgent) are more specific and stay. */
+.weekly-metric,.weekly-focus,.tip,.today-workout,.today-no-workout,.today-empty,.today-wellbeing,.today-reminders{border-color:transparent}
+.today-reminders{background:rgba(121,231,255,.06)}
+.weekly-metric{background:rgba(255,255,255,.045)}
+.history-card .history-more{margin:0 0 0 auto;padding:0;border:0}

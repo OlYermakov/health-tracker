@@ -169,17 +169,37 @@ function renderToday(){
   }).join("");
   const poolDraftHTML=enhancements.poolDraft?.week===weekIndex&&Number(enhancements.poolDraft.day)===dayIndex?
     `<div class="today-workout pool"><div><span>Чернетка</span><strong>Басейн</strong><small>Заповни результати після відвідування</small></div><button type="button" ${act("click","openPoolSession",weekIndex)}>Відкрити</button></div>`:"";
-  const workoutHTML=completedHTML||plannedHTML||poolDraftHTML?completedHTML+plannedHTML+poolDraftHTML:`<div class="today-no-workout"><span>Сьогодні тренування не заплановане.</span><button type="button" ${act("click","openTodayWorkout",weekIndex,"A",false)}>Відкрити програму</button></div>`;
+  const workoutHTML=completedHTML||plannedHTML||poolDraftHTML?completedHTML+plannedHTML+poolDraftHTML:todayNoWorkoutHTML(weekIndex,dayIndex);
   const todayNote=dayNotes[weekIndex]?.[dayIndex]||"";
   content.innerHTML=`<div class="today-context"><strong>${days[dayIndex].name} · тиждень ${weekIndex+1}</strong><span>Швидко відміть головне на сьогодні</span></div>
     <div class="today-grid">${habitButtons}</div>
     <section class="today-wellbeing" aria-label="Самопочуття сьогодні">
-      <div class="today-section-heading"><strong>Самопочуття</strong><span>Коліна: 0 — болю немає, 10 — найсильніший біль</span></div>
+      <div class="today-section-heading"><strong>Самопочуття за день</strong><span>Коліна за день: 0 — болю немає, 10 — найсильніший. До й після тренування — у самому тренуванні.</span></div>
       ${dailyWellbeingHTML(weekIndex,dayIndex)}
       <label class="today-note"><span>Замітка</span><textarea rows="2" maxlength="500" placeholder="Самопочуття, активність або що варто пам’ятати…" aria-label="Замітка на сьогодні" ${act("input","updateTodayNote",weekIndex,dayIndex,"$el")}>${escapeNote(todayNote)}</textarea></label>
     </section>
     <div class="today-workouts">${workoutHTML}</div>`;
   requestAnimationFrame(()=>content.querySelectorAll(".today-note textarea").forEach(autoSizeNote));
+}
+
+// What the Today screen says when nothing is planned for today, based on the weekly plan of 2 workouts.
+function weeklyWorkoutStatus(weekIndex,dayIndex){
+  const records=completedTrainingRecordsForWeek(weekIndex);
+  const target=typeof WEEKLY_WORKOUT_TARGET==="number"?WEEKLY_WORKOUT_TARGET:2;
+  const left=Math.max(0,target-records.length),daysLeft=7-dayIndex;
+  const donePlans=new Set(records.filter(record=>!isPoolRecord(record)).map(record=>record.planKey));
+  return {done:records.length,target,left,daysLeft,nextPlan:donePlans.has("A")&&!donePlans.has("B")?"B":"A",urgent:left>0&&daysLeft<=left+1};
+}
+
+function todayNoWorkoutHTML(weekIndex,dayIndex){
+  const status=weeklyWorkoutStatus(weekIndex,dayIndex);
+  if(!status.left)
+    return `<div class="today-no-workout done"><span><strong>План тренувань на тиждень виконано: ${status.done} / ${status.target}.</strong> Сьогодні можна відпочити або спокійно погуляти.</span></div>`;
+  const dayWord=status.daysLeft===1?"день":status.daysLeft<5?"дні":"днів";
+  const message=status.urgent
+    ?`<strong>До плану бракує ${status.left} ${status.left===1?"тренування":"тренувань"}, а лишилось ${status.daysLeft} ${dayWord}.</strong> Сьогодні гарний день для залу чи басейну.`
+    :`<strong>Сьогодні тренування не заплановане.</strong> Цього тижня виконано ${status.done} з ${status.target}.`;
+  return `<div class="today-no-workout${status.urgent?" urgent":""}"><span>${message}</span><div class="today-no-workout-actions"><button type="button" ${act("click","openTodayWorkout",weekIndex,status.nextPlan,true)}>Почати ${status.nextPlan}</button><button type="button" class="secondary" ${act("click","openPoolSession",weekIndex)}>Басейн</button></div></div>`;
 }
 
 function toggleTodayHabit(weekIndex,dayIndex,key){

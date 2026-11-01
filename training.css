@@ -105,3 +105,6 @@ a{color:inherit}
   .guided-visual{width:100%;height:190px;aspect-ratio:auto}
   .guided-visual img{object-fit:contain}
 }
+/* Status indicator, not a control: a dashed ring until every set is done, then a green check. */
+.exercise-check{width:28px;height:28px;border-radius:50%;border:2px dashed rgba(255,255,255,.16);background:transparent;font-size:14px;cursor:default;margin:5px 0 0 5px}
+.exercise-check.on{border-style:solid;border-color:rgba(66,230,164,.6);background:rgba(66,230,164,.22);color:#eafff7}

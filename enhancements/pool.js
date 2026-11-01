@@ -55,7 +55,7 @@ function renderPoolSession(){
   const painWarning=maxPain>=4?`<div class="pool-pain-warning">${maxPain>=7?"Сильний біль: припини навантаження та обговори стан із лікарем або фізіотерапевтом.":"Коліна реагують на навантаження. Обирай спокійний темп, кроль, плавання на спині або акваходьбу."}</div>`:"";
   document.getElementById("poolWeekLabel").textContent=`Басейн · тиждень ${draft.week+1}`;
   content.innerHTML=`
-    <div class="pool-intro"><div aria-hidden="true">🏊</div><div><h2>Запис тренування у басейні</h2><p>Басейн зарахується як одне з двох тренувань тижня і як активність цього дня.</p></div></div>
+    <div class="pool-intro"><div aria-hidden="true">${poolIconSVG()}</div><div><h2>Запис тренування у басейні</h2><p>Басейн зарахується як одне з двох тренувань тижня і як активність цього дня.</p></div></div>
     <div class="pool-form-grid">
       <label><span>Що замінює?</span><select ${act("change","updatePoolDraft","replacesPlan","$value")}><option value="" ${draft.replacesPlan===""?"selected":""}>Окреме тренування</option><option value="A" ${draft.replacesPlan==="A"?"selected":""}>Замість тренування A</option><option value="B" ${draft.replacesPlan==="B"?"selected":""}>Замість тренування B</option></select></label>
       <label><span>День</span><select id="poolDay" ${act("change","updatePoolDraft","day","$value")}>${poolDayOptions(draft)}</select></label>

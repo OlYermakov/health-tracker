@@ -233,7 +233,7 @@ test("real taps on buttons and fields work through event delegation without CSP 
   assert.equal(await page.locator("#exerciseImageDialog").evaluate(d=>d.open),false);
 
   // Pool session through the form.
-  await page.click('[data-click="openPoolSession"]');
+  await page.click('#training [data-click="openPoolSession"]');
   await page.selectOption("#poolDay",{index:1});
   await page.locator('[data-input="updatePoolDraft"][data-input-args*="durationMinutes"]').fill("35");
   await page.selectOption('[data-change="updatePoolDraft"][data-change-args*="swimStyle"]',"crawl");
@@ -329,8 +329,7 @@ test("reminders depend on time of day, weekly workouts and backups",async()=>{
   });
   assert.deepEqual(ids.mondayMorning,["sleep"],"no data yet, so no backup reminder");
   assert.deepEqual(ids.mondayEvening,["habits","backup"]);
-  assert.ok(ids.saturdayNoWorkouts.includes("workouts"));
-  assert.ok(!ids.saturdayDone.includes("workouts"));
+  assert.ok(!ids.saturdayNoWorkouts.includes("workouts"),"missing workouts are shown in the Today workout block, not as a reminder");
   assert.ok(ids.nextMonday.includes("summary"));
   assert.ok(!ids.afterBackup.includes("backup"));
   assert.deepEqual(ids.beforeProgram,[]);
@@ -369,8 +368,82 @@ test("numbers use a decimal comma and a real minus sign",async()=>{
 test("week table fits its card on desktop widths",async()=>{
   for(const width of [1101,1280,1440]){
     const page=await env.newPage({viewport:{width,height:900}});
-    const fit=await page.evaluate(()=>{const table=document.querySelector("#tracker table");return table.scrollWidth<=table.parentElement.clientWidth;});
+    await page.click("[data-app-screen=week]");
+    const fit=await page.evaluate(()=>{const table=document.querySelector("#tracker table");return table.clientWidth>0&&table.scrollWidth<=table.parentElement.clientWidth;});
     assert.equal(fit,true,`table overflows at ${width}px`);
     await page.context().close();
   }
+});
+
+test("Today workout block follows the weekly plan",async()=>{
+  const page=await env.newPage();
+  const out=await page.evaluate(()=>{
+    const r=(id,day,plan)=>({id,programId:enhancements.programId,weekIndex:0,kind:plan==="POOL"?"pool":"gym",planKey:plan,day:String(day),completedAt:new Date().toISOString(),exercises:[]});
+    const res={};
+    res.early=todayNoWorkoutHTML(0,1);
+    res.lateStatus=weeklyWorkoutStatus(0,5);
+    enhancements.history.push(r("a",1,"A"));
+    res.next=weeklyWorkoutStatus(0,3).nextPlan;
+    enhancements.history.push(r("b",3,"POOL"));
+    res.done=todayNoWorkoutHTML(0,5);
+    return res;
+  });
+  assert.match(out.early,/не заплановане/);
+  assert.match(out.early,/Почати A/);
+  assert.deepEqual([out.lateStatus.left,out.lateStatus.daysLeft,out.lateStatus.urgent],[2,2,true]);
+  assert.equal(out.next,"B","after A the next suggestion is B");
+  assert.match(out.done,/План тренувань на тиждень виконано: 2 \/ 2/);
+  assert.doesNotMatch(out.done,/Почати/);
+  await page.context().close();
+});
+
+test("weekly summary speaks about the rest of a running week",async()=>{
+  const page=await env.newPage();
+  const out=await page.evaluate(()=>{
+    state.weeks[0].days[0].water=true;
+    const summary=weeklySummary(0);
+    return {live:weeklyFocus(summary,{inProgress:true,daysPassed:3,daysLeft:4}),done:weeklyFocus(summary,{inProgress:false,daysPassed:7,daysLeft:0})};
+  });
+  assert.match(out.live,/Поки що тренувань 0 з 2, до кінця тижня 4 дні/);
+  assert.match(out.done,/наступного тижня/);
+  await page.context().close();
+});
+
+test("phone week screen shows compact days that expand on tap",async()=>{
+  const page=await env.newPage();
+  await page.click("[data-app-screen=week]");
+  const rows=page.locator("#weekRows tr");
+  const expandedBefore=await page.locator("#weekRows tr:not(.collapsed)").count();
+  assert.ok(expandedBefore<=1,"at most today is expanded");
+  const first=rows.first();
+  const wasCollapsed=await first.evaluate(row=>row.classList.contains("collapsed"));
+  await first.locator(".day-toggle").click();
+  assert.equal(await page.locator("#weekRows tr").first().evaluate(row=>row.classList.contains("collapsed")),!wasCollapsed);
+  assert.match(await page.locator("#weekRows tr.collapsed .day-compact").first().textContent(),/звички \d\/3/);
+  await page.context().close();
+});
+
+test("desktop shows one screen at a time",async()=>{
+  const page=await env.newPage({viewport:{width:1280,height:900}});
+  const visible=()=>page.evaluate(()=>[...document.querySelectorAll("[data-mobile-screen]")].filter(el=>getComputedStyle(el).display!=="none").map(el=>el.dataset.mobileScreen));
+  assert.deepEqual(await visible(),["today"]);
+  await page.click("[data-app-screen=training]");
+  assert.deepEqual(await visible(),["training"]);
+  await page.click("[data-app-screen=week]");
+  const fit=await page.evaluate(()=>{const table=document.querySelector("#tracker table");return table.scrollWidth<=table.parentElement.clientWidth&&table.clientWidth>0;});
+  assert.equal(fit,true);
+  await page.context().close();
+});
+
+test("cancel lives in the record menu",async()=>{
+  const page=await env.newPage();
+  page.on("dialog",dialog=>dialog.accept());
+  await page.evaluate(()=>{enhancements.history.push({id:"m1",programId:enhancements.programId,weekIndex:0,kind:"gym",planKey:"A",day:"1",completedAt:new Date().toISOString(),exercises:[]});renderAll();});
+  await page.click("[data-app-screen=training]");
+  const cancel=page.locator('#trainingHistory [data-click="cancelHistoryRecord"]').first();
+  assert.equal(await cancel.isVisible(),false,"hidden until the menu is opened");
+  await page.locator("#trainingHistory .history-more summary").first().click();
+  await cancel.click();
+  assert.equal(await page.evaluate(()=>enhancements.history.some(r=>r.id==="m1")),false);
+  await page.context().close();
 });

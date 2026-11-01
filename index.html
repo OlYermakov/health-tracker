@@ -9,22 +9,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="description" content="Особистий 12-тижневий трекер звичок, ваги, тренувань і самопочуття." />
-<title>12-тижневий health tracker</title>
+<title>12-тижневий трекер здоров’я</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<link rel="stylesheet" href="style.css?v=38" />
-<link rel="stylesheet" href="training.css?v=38" />
-<link rel="stylesheet" href="notes.css?v=38" />
-<link rel="stylesheet" href="enhancements.css?v=38" />
-<link rel="stylesheet" href="analytics.css?v=38" />
+<link rel="stylesheet" href="style.css?v=39" />
+<link rel="stylesheet" href="training.css?v=39" />
+<link rel="stylesheet" href="notes.css?v=39" />
+<link rel="stylesheet" href="enhancements.css?v=39" />
+<link rel="stylesheet" href="analytics.css?v=39" />
 </head>
 <body>
 <div class="shell">
   <section class="hero glass">
     <div>
-      <h1>12-тижневий health tracker</h1>
+      <h1>12-тижневий трекер здоров’я</h1>
       <div class="sub">Звички, активність, вага, самопочуття і дві короткі програми для залу — в одному місці. Дані зберігаються локально у твоєму браузері.</div>
     </div>
   </section>
@@ -52,7 +52,7 @@
     <div class="mobile-screen is-active" id="today" data-mobile-screen="today">
       <section class="today-panel glass" id="todayPanel" aria-labelledby="todayTitle">
         <div class="today-heading">
-          <div><div class="eyebrow">Швидкий доступ</div><h2 id="todayTitle">Сьогодні</h2></div>
+          <div><h2 id="todayTitle">Сьогодні</h2></div>
           <div class="today-date" id="todayDate"></div>
         </div>
         <div class="today-reminders" id="todayReminders" aria-live="polite" hidden></div>
@@ -61,7 +61,7 @@
     </div>
 
     <div class="mobile-screen" id="tracker" data-mobile-screen="week">
-      <div class="mobile-screen-heading"><div class="eyebrow">Огляд</div><h2>Поточний тиждень</h2></div>
+      <div class="mobile-screen-heading"><h2>Поточний тиждень</h2></div>
 
     <section class="program-settings glass" id="weekOverview" aria-labelledby="programSettingsTitle">
       <div>
@@ -81,7 +81,7 @@
     </section>
 
     <section class="weekly-summary glass" id="weeklySummary" aria-labelledby="weeklySummaryTitle">
-      <div class="eyebrow">Огляд тижня</div>
+      
       <h2 id="weeklySummaryTitle">Підсумок тижня</h2>
       <div id="weeklySummaryContent"></div>
     </section>
@@ -139,8 +139,8 @@
               <div class="center"><div><div class="pct" id="ringPct">0%</div><small>цього тижня</small></div></div>
             </div>
             <div class="tips">
-              <div class="tip"><b>Ціль:</b> щонайменше 2 активні дні на тиждень.</div>
-              <div class="tip"><b>Коли:</b> у будь-які зручні дні. Залишай день відпочинку між A і B.</div>
+              <div class="tip"><b>Відсоток:</b> 3 звички щодня (21 відмітка) і 2 активні дні на тиждень.</div>
+              <div class="tip"><b>Тренування:</b> 2 на тиждень — A, B або басейн, з днем відпочинку між ними.</div>
               <div class="tip"><b>Фокус:</b> регулярність, а не ідеальність.</div>
             </div>
           </div>
@@ -159,7 +159,7 @@
       <section class="training-section glass" id="training">
     <div class="training-head">
       <div>
-        <div class="eyebrow">Програма залу</div>
+        
         <h2>2 тренування × 30–40 хв</h2>
         <p>Повне тіло, тренажери та контрольована амплітуда. Обирай A і B у будь-які два зручні дні.</p>
       </div>
@@ -185,7 +185,7 @@
 
       <section class="history-section glass" id="trainingHistory" aria-labelledby="historyTitle">
     <div class="history-heading">
-      <div><div class="eyebrow">Журнал</div><h2 id="historyTitle">Історія тренувань</h2></div>
+      <div><h2 id="historyTitle">Історія тренувань</h2></div>
       <div class="history-heading-meta"><button id="undoHistoryChange" type="button" data-click="undoHistoryChange" hidden>↶ Скасувати зміну</button><span id="historyCount">0 записів</span></div>
     </div>
     <div class="history-list" id="historyList"></div>
@@ -193,12 +193,12 @@
     </div>
 
     <div class="mobile-screen" id="progress-screen" data-mobile-screen="progress">
-      <div class="mobile-screen-heading"><div class="eyebrow">Apple Health і програма</div><h2>Аналітика</h2></div>
+      <div class="mobile-screen-heading"><h2>Аналітика</h2></div>
 
       <section class="health-analytics" id="healthAnalytics" aria-labelledby="healthAnalyticsTitle">
         <section class="analytics-command glass">
           <div class="analytics-command-copy">
-            <div class="eyebrow">Локальний аналіз</div>
+            
             <h2 id="healthAnalyticsTitle">Показники здоров’я</h2>
             <p id="healthAnalyticsStatus">Імпортуй експорт Apple Health — дані буде оброблено тільки на цьому пристрої.</p>
           </div>
@@ -243,7 +243,7 @@
 
       <details class="program-progress-details glass" id="programProgressDetails">
         <summary>
-          <span><span class="eyebrow">Поточна програма</span><strong>Прогрес 12-тижневого плану</strong></span>
+          <span><strong>Прогрес 12-тижневого плану</strong></span>
           <span class="program-progress-chevron" aria-hidden="true">⌄</span>
         </summary>
         <div class="program-progress-content">
@@ -263,7 +263,7 @@
       </section>
 
       <section class="summary-section glass" aria-labelledby="summaryTitle">
-    <div class="eyebrow">Підсумок</div>
+    
     <h2 id="summaryTitle">Результат програми</h2>
     <div class="summary-grid">
       <div class="summary-card"><span>Тренувань усього</span><strong id="summaryWorkouts">0</strong></div>
@@ -284,7 +284,7 @@
     </div>
 
     <div class="mobile-screen" id="more" data-mobile-screen="more">
-      <div class="mobile-screen-heading"><div class="eyebrow">Додатково</div><h2>Ще</h2></div>
+      <div class="mobile-screen-heading"><h2>Ще</h2></div>
 
       <section class="mobile-more-card mobile-program-settings glass" aria-labelledby="mobileProgramSettingsTitle">
         <div>
@@ -298,7 +298,7 @@
       </section>
 
       <section class="mobile-more-card glass" aria-labelledby="mobileDataTitle">
-        <div><div class="eyebrow">Захист прогресу</div><h2 id="mobileDataTitle">Дані застосунку</h2></div>
+        <div><h2 id="mobileDataTitle">Дані застосунку</h2></div>
         <div class="mobile-data-actions">
           <button class="btn" type="button" data-click="exportBackup">Зберегти копію</button>
           <button class="btn" type="button" data-click="openBackupPicker">Відновити з файла</button>
@@ -346,18 +346,18 @@
     <div id="historyEditContent"></div>
   </form>
 </dialog>
-<script src="events.js?v=38"></script>
-<script src="app.js?v=38"></script>
-<script src="exercise-details.js?v=38"></script>
-<script src="enhancements/model.js?v=38"></script>
-<script src="enhancements/core.js?v=38"></script>
-<script src="enhancements/training-log.js?v=38"></script>
-<script src="enhancements/history.js?v=38"></script>
-<script src="enhancements/pool.js?v=38"></script>
-<script src="enhancements/guided-workout.js?v=38"></script>
-<script src="enhancements/archive-backup.js?v=38"></script>
-<script src="enhancements/insights.js?v=38"></script>
-<script src="enhancements/init.js?v=38"></script>
-<script src="analytics.js?v=38"></script>
+<script src="events.js?v=39"></script>
+<script src="app.js?v=39"></script>
+<script src="exercise-details.js?v=39"></script>
+<script src="enhancements/model.js?v=39"></script>
+<script src="enhancements/core.js?v=39"></script>
+<script src="enhancements/training-log.js?v=39"></script>
+<script src="enhancements/history.js?v=39"></script>
+<script src="enhancements/pool.js?v=39"></script>
+<script src="enhancements/guided-workout.js?v=39"></script>
+<script src="enhancements/archive-backup.js?v=39"></script>
+<script src="enhancements/insights.js?v=39"></script>
+<script src="enhancements/init.js?v=39"></script>
+<script src="analytics.js?v=39"></script>
 </body>
 </html>

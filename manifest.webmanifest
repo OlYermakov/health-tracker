@@ -1,6 +1,6 @@
 {
-  "name": "12-тижневий health tracker",
-  "short_name": "Health tracker",
+  "name": "12-тижневий трекер здоров’я",
+  "short_name": "Трекер здоров’я",
   "description": "Особистий трекер звичок, ваги, тренувань і самопочуття.",
   "lang": "uk",
   "start_url": "./",

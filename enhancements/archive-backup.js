@@ -4,7 +4,7 @@ function archiveHistoryRecordHTML(record,archive){
   const dateLabel=date?new Intl.DateTimeFormat("uk-UA",{day:"numeric",month:"long",year:"numeric"}).format(date):`Тиждень ${record.weekIndex+1}`;
   if(isPoolRecord(record)){
     const details=[record.durationMinutes?`${record.durationMinutes} хв`:"",record.distanceMeters?`${record.distanceMeters} м`:"",SWIM_STYLE_LABELS[record.swimStyle]||"",INTENSITY_LABELS[record.intensity]||"",record.replacesPlan?`замість ${record.replacesPlan}`:""].filter(Boolean).join(" · ");
-    return `<article class="archive-session pool"><div><span>${dateLabel}</span><strong>🏊 Басейн</strong></div><p>${escapeNote(details||"Без додаткових показників")}</p>${record.notes?`<small>${escapeNote(record.notes)}</small>`:""}</article>`;
+    return `<article class="archive-session pool"><div><span>${dateLabel}</span><strong>${poolIconSVG("icon-pool inline")}Басейн</strong></div><p>${escapeNote(details||"Без додаткових показників")}</p>${record.notes?`<small>${escapeNote(record.notes)}</small>`:""}</article>`;
   }
   const rows=record.exercises.map((exercise,index)=>{
     const values=exercise.sets?.map(set=>formatSet(set,record.planKey,index)).filter(value=>value!=="—").join(" · ");
